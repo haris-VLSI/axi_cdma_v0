@@ -1,0 +1,25 @@
+class cdma_sbd extends uvm_scoreboard;
+`uvm_component_utils(cdma_sbd)
+    
+    uvm_tlm_analysis_fifo#(master_seq_item) master_af;
+    uvm_tlm_analysis_fifo#(slave_seq_item) slave_af;
+
+    function new(string name="cdma_sbd",uvm_component parent);
+        super.new(name,parent);
+    endfunction
+
+    function void build();
+        master_af = new("master_af",this);
+        slave_af = new("slave_af",this);
+    endfunction
+
+    task main_phase(uvm_phase phase);
+        get_config_phase();
+    endtask
+
+    task get_config_phase();
+        forever begin
+     //       master_af.get();
+        end
+    endtask
+endclass

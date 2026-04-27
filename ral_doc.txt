@@ -1,0 +1,36 @@
+To implement a project which have registers, using RAL, we need the below things:
+
+    > RAL model of those registers:
+        - uvm_reg files
+        - uvm_reg_block file
+        - Also add hdl path where the hardware registers present in the RTL
+    > Adapter for bus communication
+    > Predictor for updating mirror values in RAL model
+
+Declarations and connections in env:
+
+    reg_block           reg_block;
+    cdma_reg_adapter    reg_adapter;
+    uvm_reg_predictor #(seq_item) reg_predictor;
+
+Allocate memory to those modules and build and lock in build like:
+    reg_block.build();
+    reg_block.lock_model();
+
+Set registers in DB to use in TB:
+    uvm_config_db#(reg_block)::set(this, "*", "reg_block", reg_block);
+
+Make connections to predictor to make it work and use explicit prediction:
+    Predctior:
+    reg_predictor.map       =   reg_block.default_map;
+    reg_predictor.adapter   =   reg_adapter;
+    reg_block.default_map.set_auto_predict(0);
+
+    Virtual Sequencer:
+    v_seqr.reg_block        =   reg_block;
+    
+    Adapter-Sequencer:
+    reg_block.default_map.set_sequencer(m_agt[i].sqr, reg_adapter);
+
+    Monitor-Predctior:
+    m_agt[i].mon.mon_ap.connect(reg_predictor.bus_in);

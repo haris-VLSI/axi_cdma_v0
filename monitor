@@ -1,0 +1,118 @@
+class master_monitor extends uvm_monitor;
+    `uvm_component_utils (master_monitor)
+    uvm_analysis_port #(master_seq_item)   mon_ap;
+
+    virtual master_intf.MON_MOD_master     master_mon_intf;
+
+    master_seq_item write_addr[$],write_data[$],write_resp[$],read_data[$],read_addr[$];
+    //master_seq_item pkt;
+
+    function new (string name = "master_monitor" , uvm_component parent);
+        super.new(name,parent);
+    endfunction
+
+    extern task main_phase (uvm_phase phase);
+    extern function void build_phase (uvm_phase phase);
+    extern task capture_write_address();
+    extern task capture_write_data();
+    extern task capture_write_response();
+    extern task merge_write_info();
+    extern task capture_read_address();
+    extern task capture_read_data();
+    extern task merge_read_info();
+
+endclass :master_monitor
+
+    function void master_monitor :: build_phase (uvm_phase phase);
+      super.build_phase (phase);
+      mon_ap = new ("mon_ap",this);
+      //pkt = master_seq_item::type_id::create("pkt");
+      `uvm_info (get_full_name() , phase.get_name() , UVM_MEDIUM)
+    endfunction : build_phase
+
+// -------------------------------------------------------------
+    // 1. The main_phase runs everything independently in parallel
+    // -------------------------------------------------------------
+    task master_monitor::main_phase(uvm_phase phase);
+        `uvm_info(get_full_name(), "Starting Independent AXI Monitor", UVM_LOW)
+        fork
+            capture_write_address();
+            capture_write_data();
+            capture_write_response();
+            merge_write_info();       // <--- Now it constantly listens!
+            
+            capture_read_address();
+            capture_read_data();
+            merge_read_info();
+        join
+    endtask
+
+    // -------------------------------------------------------------
+    // 2. Write Capture Tasks (Notice the forever loop is inside)
+    // -------------------------------------------------------------
+    task master_monitor::capture_write_address();
+        master_seq_item pkt;
+        forever begin
+            do begin
+                @(master_mon_intf.mas_mon_cb);
+            end while(!(master_mon_intf.mas_mon_cb.awready==1 && master_mon_intf.mas_mon_cb.awvalid==1 && master_mon_intf.areset_n==1));
+            
+            pkt = master_seq_item::type_id::create("pkt");
+            pkt.awaddr = master_mon_intf.mas_mon_cb.awaddr;
+            write_addr.push_back(pkt);
+            // DO NOT put an extra @(cb) here! Immediately loop back!
+        end
+    endtask
+
+    task master_monitor::capture_write_data();
+        master_seq_item pkt;
+        forever begin
+            do begin
+                @(master_mon_intf.mas_mon_cb);
+            end while(!(master_mon_intf.mas_mon_cb.wready==1 && master_mon_intf.mas_mon_cb.wvalid==1 && master_mon_intf.areset_n==1));
+            
+            pkt = master_seq_item::type_id::create("pkt");
+            pkt.wdata = new[1];
+            pkt.wdata[0] = master_mon_intf.mas_mon_cb.wdata;
+            write_data.push_back(pkt);
+        end
+    endtask
+
+    task master_monitor::capture_write_response();
+        master_seq_item pkt;
+        forever begin
+            do begin
+                @(master_mon_intf.mas_mon_cb);
+            end while(!(master_mon_intf.mas_mon_cb.bready==1 && master_mon_intf.mas_mon_cb.bvalid==1 && master_mon_intf.areset_n==1));
+            
+            pkt = master_seq_item::type_id::create("pkt");
+            pkt.bresp = response_t'(master_mon_intf.mas_mon_cb.bresp);
+            write_resp.push_back(pkt);
+        end
+    endtask
+
+    // -------------------------------------------------------------
+    // 3. The Merge Task (Waits for the queues to have data)
+    // -------------------------------------------------------------
+    task master_monitor::merge_write_info();
+        master_seq_item w_merge;
+        forever begin
+            // This safely blocks until all 3 queues have at least 1 item
+            wait(write_addr.size() > 0 && write_data.size() > 0 && write_resp.size() > 0);
+            
+            w_merge = master_seq_item::type_id::create("w_merge");
+            w_merge.awaddr    = write_addr[0].awaddr;
+            w_merge.wdata     = write_data[0].wdata;
+            w_merge.bresp     = write_resp[0].bresp;
+            w_merge.operation = WRITE;
+            
+            void'(write_addr.pop_front());
+            void'(write_data.pop_front());
+            void'(write_resp.pop_front());
+            
+            // PROOF OF LIFE PRINT: If you see this, the Predictor gets the packet!
+            `uvm_info("PREDICTOR_DEBUG", $sformatf("Broadcasting WRITE to Addr: 0x%0h", w_merge.awaddr), UVM_LOW)
+            mon_ap.write(w_merge);
+        end
+    endtask
+

@@ -96,7 +96,7 @@ class cdma_cov extends uvm_subscriber #(master_seq_item);
                                            32'b????_????_????_????_????_????_????_??11 };
         }
 
-        // Cross Cpverage
+        // Cross Coverage
         IOC_OP_MODE : cross IOC, OP_MODE;
         ERR_OP_MODE : cross ERR, OP_MODE;
         IOC_ERR     : cross IOC, ERR;

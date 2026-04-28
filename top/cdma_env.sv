@@ -9,6 +9,7 @@ class cdma_env extends uvm_env;
   master_agent          m_agt[];
   slave_agent           s_agt[];
   virtual_sequencer     v_seqr;
+  cdma_chk              chk;
   cdma_sbd              sbd;
   cdma_cov              cov;
   
@@ -46,6 +47,7 @@ class cdma_env extends uvm_env;
       s_agt[i] = slave_agent::type_id::create($sformatf("s_agt[%0d]", i), this);
       s_agt[i].agt_active = obj.slv_is_active[i];
     end
+      chk = cdma_chk::type_id::create("chk",this);
       sbd = cdma_sbd::type_id::create("sbd",this);
       cov = cdma_cov::type_id::create("cov",this);
   endfunction
@@ -54,6 +56,7 @@ class cdma_env extends uvm_env;
     super.connect_phase(phase);
     `uvm_info("cdma_env::connect", "inside_cdma_env_connect_phase", UVM_MEDIUM)
 
+    chk.reg_block           =   reg_block;
     sbd.reg_block           =   reg_block;
     reg_predictor.map       =   reg_block.default_map;
     reg_predictor.adapter   =   reg_adapter;
@@ -73,6 +76,7 @@ class cdma_env extends uvm_env;
           //v_seqr.m_seqr[i] = m_agt[i].sqr;
           m_agt[i].drv.master_drv_intf = obj.mas_if[i];
           m_agt[i].drv.seq_item_port.connect(m_agt[i].sqr.seq_item_export);
+          m_agt[i].mon.mon_ap.connect(chk.master_af.analysis_export);
           m_agt[i].mon.mon_ap.connect(sbd.master_af.analysis_export);
           m_agt[i].mon.mon_ap.connect(cov.analysis_export);
 
@@ -99,6 +103,7 @@ class cdma_env extends uvm_env;
 
             s_agt[i].drv.slave_drv_intf = obj.slv_if[i];
             s_agt[i].drv.seq_item_port.connect(s_agt[i].sqr.seq_item_export);
+            s_agt[i].mon.mon_ap.connect(chk.slave_af.analysis_export);
             s_agt[i].mon.mon_ap.connect(sbd.slave_af.analysis_export);
 
             //connected in slave agent

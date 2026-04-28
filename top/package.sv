@@ -29,7 +29,7 @@ package axi_package;
 
  `include "../common/cov_cdma.sv"
  `include "../common/sbd_cdma.sv"
- //`include "../common/sbd.sv"
+ `include "../common/chk_cdma.sv"
  //`include "../common/cdma_sbd.sv"
  //`include "../common/cdma_4k_sbd.sv"
 // TOP

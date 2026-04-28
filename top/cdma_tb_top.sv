@@ -171,7 +171,7 @@ module top;
         //run_test ("simple_dma_decode_error_test");        //11 working
         //run_test ("simple_dma_slave_error_test");         //10 working
         //run_test ("simple_mode_fixed_transfer_test");     //9 working
-        run_test ("simple_mode_incr_transfer_test");      //8 working
+        //run_test ("simple_mode_incr_transfer_test");      //8 working
         //run_test ("simple_mode_wr_rd_test");              //7 working
         //run_test ("ral_access_test");                     //6 working
         //run_test ("ral_bit_bash_test");                   //5 working
@@ -180,7 +180,7 @@ module top;
         //run_test ("ral_reset_test");                      //2 working
         //
         //run_test ("cdma_base_test");                      //1
-        //run_test ();
+        run_test ();
     end
     
     initial begin

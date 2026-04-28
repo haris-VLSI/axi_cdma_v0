@@ -134,7 +134,7 @@ class cdma_cov extends uvm_subscriber #(master_seq_item);
         //cov = t;
         //$cast(cov,t);
         cov = new t;
-        if (cov.operation == WRITE && cov.awaddr == 'h00) begin
+        if(cov.operation == WRITE && cov.awaddr == 'h00)begin
             op_mode = cov.wdata[0][3];
             reset   = cov.wdata[0][2];
         end

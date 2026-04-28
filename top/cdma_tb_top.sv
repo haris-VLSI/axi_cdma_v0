@@ -161,7 +161,7 @@ module top;
 
     initial begin
         //run_test ("simple_mode_64mb_btt_test");           //19 to run
-        run_test ("simple_mode_b2b_ioc_test");            //18 working
+        //run_test ("simple_mode_b2b_ioc_test");            //18 working
         //run_test ("simple_mode_b2b_test");                //17 working SBD failed for b2b tx
         //run_test ("simple_mode_4k_check_test");           //16 working
         //run_test ("simple_mode_btt_check_test");          //15 working
@@ -171,7 +171,7 @@ module top;
         //run_test ("simple_dma_decode_error_test");        //11 working
         //run_test ("simple_dma_slave_error_test");         //10 working
         //run_test ("simple_mode_fixed_transfer_test");     //9 working
-        //run_test ("simple_mode_incr_transfer_test");      //8 working
+        run_test ("simple_mode_incr_transfer_test");      //8 working
         //run_test ("simple_mode_wr_rd_test");              //7 working
         //run_test ("ral_access_test");                     //6 working
         //run_test ("ral_bit_bash_test");                   //5 working

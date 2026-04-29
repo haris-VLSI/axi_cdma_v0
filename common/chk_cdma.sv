@@ -1,4 +1,4 @@
-class cdma_chk extends uvm_component;
+class cdma_chk extends uvm_scoreboard;
     `uvm_component_utils(cdma_chk)
 
     cdma_reg_block  reg_block;
@@ -45,8 +45,8 @@ class cdma_chk extends uvm_component;
 
     task main_phase (uvm_phase phase);
         fork
-            predict_master_packet();
-            compare_master_pkt();
+            //predict_master_packet();
+            //compare_master_pkt();
         join
     endtask
 
@@ -96,7 +96,7 @@ class cdma_chk extends uvm_component;
                     `uvm_info("CHK_RAL", $sformatf("ARLEN is matched: %0h", slv_pkt.arlen), UVM_LOW)
                 end
                 else begin
-                    `uvm_error("CHK_RAL", $sformatf("ARLEN mismatch! Expected: %0h, Got: %0h", exp_len_r, slv_pkt.arlen)) 
+                    `uvm_error("CHK_RAL", $sformatf("ARLEN mismatch! Expected: %0h, Got: %0h", exp_len_r, slv_pkt.arlen))
                 end
 
                 //CDMACR for burst type

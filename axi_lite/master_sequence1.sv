@@ -56,7 +56,6 @@ class simple_mode_wr_rd_seq extends base_master_sequence;
 
         `uvm_info("SIMPLE_MODE_INCR_SEQ", "Starting Simple Mode INCR Transfer Sequence", UVM_MEDIUM)
         
-        //regi = cdma_reg_seq_item::type_id::create("regi");
         if(!regi.randomize() with {
             //regi.btt_s == MB;
             regi.btt_s == MIN;
@@ -183,7 +182,6 @@ class simple_mode_fixed_seq extends base_master_sequence;
     task body();
         super.body();
 
-        regi = reg_seq_item::type_id::create("regi");
         if(!regi.randomize() with {
             regi.btt_s       == MIN;
             regi.sa_addr     == 'hfcc;
@@ -227,7 +225,6 @@ class simple_dma_slave_error_seq extends base_master_sequence;
         //std::randomize(btt_bytes) with { btt_bytes inside {['d1 : 'd1024]}; };
         //std::randomize(sa_addr);
         //std::randomize(da_addr);
-        regi = reg_seq_item::type_id::create("regi");
         if(!regi.randomize() with {
             regi.btt_s==MIN;
             })begin
@@ -282,7 +279,6 @@ class simple_dma_decode_error_seq extends base_master_sequence;
         //std::randomize(btt_bytes) with { btt_bytes inside {['d1 : 'd1024]}; };
         //std::randomize(sa_addr);
         //std::randomize(da_addr);
-        regi = reg_seq_item::type_id::create("regi");
         if(!regi.randomize() with {
             regi.btt_s==MIN;
             })begin
@@ -332,7 +328,6 @@ class simple_dma_int_error_seq extends base_master_sequence;
     task body();
         super.body();
 
-        regi = reg_seq_item::type_id::create("regi");
         if(!regi.randomize() with {
             regi.btt_s==MIN;
             //regi.da_addr == 'hffff_ffff_ffff_ffff;
@@ -388,7 +383,6 @@ class simple_dma_4k_boundary_seq extends base_master_sequence;
     task body();
         super.body();
 
-        regi = reg_seq_item::type_id::create("regi");
         //if(!regi.randomize() with {
         assert(regi.randomize() with {
             //regi.btt_s==MIN;
@@ -863,7 +857,6 @@ class simple_mode_64mb_btt_seq extends base_master_sequence;
         `uvm_info("SIMPLE_MODE_64MB_SEQ", $sformatf("Idle = %0h - wait clear",cdmasr_data[1]), UVM_MEDIUM)
         reg_block.cdmacr.write(status, 32'h11000);
 
-        regi = reg_seq_item::type_id::create("btt_pkt");
         if(!regi.randomize() with {
             regi.sa_addr         == 'h8000_0000;
             regi.da_addr         == 'h9000_0000;

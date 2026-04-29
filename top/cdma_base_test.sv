@@ -33,6 +33,7 @@ class cdma_base_test extends uvm_test;
      
   endfunction : end_of_elaboration_phase
 
+
   //cdma_base_test:: reset_phase
     task reset_phase(uvm_phase phase);
         super.reset_phase(phase);
@@ -243,15 +244,11 @@ class ral_bit_bash_test extends cdma_base_test;
         env.reg_block.cdmacr.write(status,value);
         env.reg_block.cdmacr.read(status,value);
         `uvm_info("DEBUG", $sformatf("Read CR: 0x%0h", value), UVM_MEDIUM)
-        #10;
-        env.reg_block.cdmacr.SGMode.read(status,value);
-        `uvm_info("DEBUG", $sformatf("Read CR SGMode: 0x%0h", value), UVM_MEDIUM)
+        `uvm_info("DEBUG", $sformatf("Read CR SGMode: 0x%0h", value[3]), UVM_MEDIUM)
         #10;
         env.reg_block.cdmasr.read(status,value);
         `uvm_info("DEBUG", $sformatf("Read SR: 0x%0h", value), UVM_MEDIUM)
-        #10;
-        env.reg_block.cdmasr.Idle.read(status,value);
-        `uvm_info("DEBUG", $sformatf("Read SR Idle: 0x%0h", value), UVM_MEDIUM)
+        `uvm_info("DEBUG", $sformatf("Read SR Idle: 0x%0h", value[1]), UVM_MEDIUM)
         #10;
         //env.reg_block.curdesc_pnt.write(status,32'hFFFFFFFF);
         //env.reg_block.curdesc_pnt.read(status,rdata);

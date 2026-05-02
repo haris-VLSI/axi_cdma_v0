@@ -77,8 +77,8 @@ class cdma_env extends uvm_env;
           m_agt[i].drv.master_drv_intf = obj.mas_if[i];
           m_agt[i].drv.seq_item_port.connect(m_agt[i].sqr.seq_item_export);
           m_agt[i].mon.mon_ap.connect(chk.master_af.analysis_export);
-          //m_agt[i].mon.mon_ap.connect(sbd.master_af.analysis_export);
-          m_agt[i].mon.mon_ap.connect(sbd.cfg_export);
+          m_agt[i].mon.mon_ap.connect(sbd.master_af.analysis_export);
+          //m_agt[i].mon.mon_ap.connect(sbd.cfg_export);
           m_agt[i].mon.mon_ap.connect(cov.analysis_export);
 
           reg_block.default_map.set_sequencer(m_agt[i].sqr, reg_adapter);
@@ -104,10 +104,13 @@ class cdma_env extends uvm_env;
 
             s_agt[i].drv.slave_drv_intf = obj.slv_if[i];
             s_agt[i].drv.seq_item_port.connect(s_agt[i].sqr.seq_item_export);
-            s_agt[i].mon.mon_ap.connect(chk.slave_af.analysis_export);
-            //s_agt[i].mon.mon_ap.connect(sbd.slave_af.analysis_export);
-            s_agt[i].mon.mon_ap.connect(sbd.rd_export);
-            s_agt[i].mon.mon_ap.connect(sbd.wr_export);
+            s_agt[i].mon.rd_mon_ap.connect(chk.rd_slave_af.analysis_export);
+            s_agt[i].mon.wr_mon_ap.connect(chk.wr_slave_af.analysis_export);
+            s_agt[i].mon.mon_ap.connect(sbd.slave_af.analysis_export);
+            s_agt[i].mon.wr_mon_ap.connect(sbd.slave_af.analysis_export);
+            s_agt[i].mon.rd_mon_ap.connect(sbd.slave_af.analysis_export);
+            //s_agt[i].mon.mon_ap.connect(sbd.rd_export);
+            //s_agt[i].mon.mon_ap.connect(sbd.wr_export);
 
             //connected in slave agent
             //s_agt[i].mon.resp_ap.connect(s_agt[i].sqr.resp_af.analysis_export);

@@ -2,6 +2,8 @@ class slave_monitor extends uvm_monitor;
 
    `uvm_component_utils (slave_monitor)
    uvm_analysis_port #(slave_seq_item)   mon_ap;
+   uvm_analysis_port #(slave_seq_item)   wr_mon_ap;
+   uvm_analysis_port #(slave_seq_item)   rd_mon_ap;
    uvm_analysis_port #(slave_seq_item)   resp_ap;
    virtual slave_intf.MON_MOD_slave      slave_mon_intf;
    mailbox #(slave_seq_item)  write_address_mbx ,write_data_mbx;      //to capture transactions on write address channel // Preserve ordering
@@ -27,6 +29,8 @@ endclass :slave_monitor
 function void slave_monitor :: build_phase (uvm_phase phase);
   super.build_phase (phase);
   mon_ap = new ("mon_ap",this);
+  wr_mon_ap = new ("wr_mon_ap",this);
+  rd_mon_ap = new ("rd_mon_ap",this);
   resp_ap = new("resp_ap",this);
   `uvm_info (get_full_name() , phase.get_name() , UVM_MEDIUM)
 endfunction : build_phase
@@ -117,7 +121,7 @@ task  slave_monitor ::  capture_write_response();
        pkt.bresp  =response_t'( slave_mon_intf.slv_mon_cb.bresp);
        //`uvm_info("slave_monitor :: capture_write_response","Sending pkt to SB",UVM_MEDIUM);
        //pkt.print_write_txn(pkt);
-       mon_ap.write(pkt); //write pkt to sb
+       wr_mon_ap.write(pkt); //write pkt to sb
        `uvm_info("slave_monitor:: capture_write_responce",pkt.sprint(),UVM_MEDIUM)
     end else `uvm_error("slave_monitor :: capture_write_response",$sformatf("unexpected write response, BID not found bid= %b",slave_mon_intf.slv_mon_cb.bid))
     @(slave_mon_intf.slv_mon_cb); //wait till next clk posedge
@@ -192,7 +196,7 @@ task  slave_monitor ::  capture_read_data();
    end
     //`uvm_info("slave_monitor :: capture_read_data","Sending pkt to SB",UVM_MEDIUM);
     //pkt2sb.print_read_txn(pkt2sb);
-    mon_ap.write(pkt2sb); //write pkt to sb
+    rd_mon_ap.write(pkt2sb); //write pkt to sb
  end
 endtask
 

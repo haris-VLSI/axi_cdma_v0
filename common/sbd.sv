@@ -13,21 +13,22 @@ endclass
 `uvm_analysis_imp_decl(_axi_rd)
 `uvm_analysis_imp_decl(_axi_wr)
 
-class cdma_sbd extends uvm_scoreboard;
-    `uvm_component_utils(cdma_sbd)
+class cdma_chk extends uvm_component;
+    `uvm_component_utils(cdma_chk)
 
     cdma_reg_block reg_block;
     int AXI_BUS_BYTES; 
 
     // TLM Ports
-    uvm_analysis_imp_cfg    #(master_seq_item, cdma_sbd) cfg_export;
-    uvm_analysis_imp_axi_rd #(slave_seq_item,  cdma_sbd) rd_export;
-    uvm_analysis_imp_axi_wr #(slave_seq_item,  cdma_sbd) wr_export;
+    uvm_analysis_imp_cfg    #(master_seq_item, cdma_chk) cfg_export;
+    uvm_analysis_imp_axi_rd #(slave_seq_item, cdma_chk) rd_export;
+    uvm_analysis_imp_axi_wr #(slave_seq_item, cdma_chk) wr_export;
 
     // DRE Queues & Context Trackers
-    cdma_transfer_cfg cfg_q[$];      
-    slave_seq_item    expected_ar_q[$]; 
-    slave_seq_item    expected_aw_q[$]; 
+    cdma_transfer_cfg   cfg_q[$];      
+    slave_seq_item      expected_ar_q[$]; 
+    slave_seq_item      expected_aw_q[$]; 
+    bit [127:0]         expected_wstrb_q[$];
     
     bit [7:0] dre_fifo[$];  
     int       read_btt_q[$];
@@ -39,7 +40,7 @@ class cdma_sbd extends uvm_scoreboard;
     int       write_total_btt = 0;
     int       write_btt_remaining = 0;
 
-    function new(string name = "cdma_sbd", uvm_component parent);
+    function new(string name = "cdma_chk", uvm_component parent);
         super.new(name, parent);
     endfunction
 
@@ -146,7 +147,10 @@ class cdma_sbd extends uvm_scoreboard;
             exp_aw.awlen   = predict_axlen(v_da, current_burst_bytes, exp_axsize);
             exp_aw.awburst = is_fixed_write ? FIXED : INCR;
             expected_aw_q.push_back(exp_aw);
-
+            
+            for (int b = 0; b <= exp_aw.awlen; b++) begin
+                expected_wstrb_q.push_back(get_expected_wstrb(b, v_da, exp_aw.awlen, current_burst_bytes));
+            end
             `uvm_info("CHK_PREDICT", $sformatf("Predicted AW: Addr=%0h, Len=%0d, Burst=%s", exp_aw.awaddr, exp_aw.awlen, exp_aw.awburst.name()), UVM_LOW)
 
             v_da += current_burst_bytes;
@@ -208,9 +212,29 @@ class cdma_sbd extends uvm_scoreboard;
         end
     endfunction
 
-    // ----------------------------------------------------
     // PORT 3: AXI WRITE MONITOR (Byte Comparator)
-    // ----------------------------------------------------
+    // HELPER MATH: WSTRB Prediction
+    virtual function bit [127:0] get_expected_wstrb(int beat, longint addr, int awlen, int burst_bytes);
+        int start_offset = addr % AXI_BUS_BYTES;
+        bit [127:0] strb = 0;
+
+        if (awlen == 0) begin
+            // Single beat burst: Mask the start AND the end
+            strb = ((1 << burst_bytes) - 1) << start_offset;
+        end else if (beat == 0) begin
+            // First beat of a multi-beat burst: Mask the start
+            strb = ((1 << (AXI_BUS_BYTES - start_offset)) - 1) << start_offset;
+        end else if (beat == awlen) begin
+            // Last beat: Mask the end
+            int end_offset = (addr + burst_bytes) % AXI_BUS_BYTES;
+            strb = (end_offset == 0) ? ((1 << AXI_BUS_BYTES) - 1) : ((1 << end_offset) - 1);
+        end else begin
+            // Middle beats: All valid
+            strb = (1 << AXI_BUS_BYTES) - 1;
+        end
+        return strb;
+    endfunction
+
     virtual function void write_axi_wr(slave_seq_item pkt);
         slave_seq_item exp_aw;
         int start_offset;
@@ -223,53 +247,51 @@ class cdma_sbd extends uvm_scoreboard;
         end
 
         if (pkt.operation == WRITE) begin
+// 2. Check Data Phase and WSTRB
             if (expected_aw_q.size() == 0) begin
-                `uvm_error("CHK_AW", "RTL issued AW, but Predictor queue is empty!")
+                `uvm_error("CHK_W", "Write Data arrived, but no Read Data was buffered!")
             end else begin
                 exp_aw = expected_aw_q.pop_front();
-                if (exp_aw.awaddr != pkt.awaddr || exp_aw.awlen != pkt.awlen || exp_aw.awsize != pkt.awsize) begin
-                    `uvm_error("CHK_AW", $sformatf("AW Mismatch! Exp: Addr=%0h Len=%0d | Got: Addr=%0h Len=%0d", 
-                               exp_aw.awaddr, exp_aw.awlen, pkt.awaddr, pkt.awlen))
-                end else begin
-                    `uvm_info("CHK_AW", $sformatf("AW Match: %0h", pkt.awaddr), UVM_LOW)
-                end
-            end
-
-            // --- FIX: VIRTUAL ALIGNMENT CHECK ---
-            if (write_btt_remaining == write_total_btt) begin
-                start_offset = pkt.awaddr % AXI_BUS_BYTES;
-            end else begin
-                start_offset = 0;
-            end
-
-            error_flag = 0;
-            for (int i = 0; i <= pkt.awlen; i++) begin
-                for (int byte_idx = 0; byte_idx < AXI_BUS_BYTES; byte_idx++) begin
-                    if (i == 0 && byte_idx < start_offset) continue;
+                error_flag = 0;
+                
+                // Loop through every beat of the AWLEN
+                for (int i = 0; i <= pkt.awlen; i++) begin
                     
-                    if (write_btt_remaining > 0) begin
-                        if (dre_fifo.size() == 0) begin
-                            `uvm_error("CHK_DRE", "Write Monitor expected a byte, but DRE FIFO is empty!")
-                        end else begin
-                            bit [7:0] exp_byte = dre_fifo.pop_front();
-                            bit [7:0] act_byte = pkt.wdata[i][byte_idx*8 +: 8];
-                            
-                            if (exp_byte != act_byte && !error_flag) begin
-                                `uvm_error("CHK_W_DATA", $sformatf("Byte Mismatch at Beat %0d, Lane %0d! Exp: %0h | Got: %0h", 
-                                           i, byte_idx, exp_byte, act_byte))
-                                error_flag = 1; 
+                    // Pop our mathematically perfect WSTRB prediction
+                    bit [127:0] exp_strb = expected_wstrb_q.pop_front();
+                    
+                    // A) Check if RTL drove the correct Strobe
+                    if (pkt.wstrobe[i] != exp_strb) begin
+                        `uvm_error("CHK_WSTRB", $sformatf("WSTRB Mismatch at Beat %0d! Exp: %0h | Got: %0h", 
+                                   i, exp_strb, pkt.wstrobe[i]))
+                        error_flag = 1;
+                    end
+                    
+                    // B) Check the Data Payload ONLY where the expected strobe is 1
+                    for (int byte_idx = 0; byte_idx < AXI_BUS_BYTES; byte_idx++) begin
+                        if (exp_strb[byte_idx] == 1'b1) begin
+                            // This is a valid byte! Pop from DRE and compare.
+                            if (dre_fifo.size() == 0) begin
+                                `uvm_error("CHK_DRE", "DRE FIFO empty but expected valid data!")
+                            end else begin
+                                bit [7:0] exp_byte = dre_fifo.pop_front();
+                                bit [7:0] act_byte = pkt.wdata[i][byte_idx*8 +: 8];
+                                
+                                if (exp_byte != act_byte && !error_flag) begin
+                                    `uvm_error("CHK_W_DATA", $sformatf("Data Mismatch at Beat %0d, Lane %0d! Exp: %0h | Got: %0h", 
+                                               i, byte_idx, exp_byte, act_byte))
+                                    error_flag = 1; 
+                                end
                             end
                         end
-                        write_btt_remaining--;
                     end
                 end
+                if (!error_flag) `uvm_info("CHK_W_DATA", "Write Burst Data & Strobes Matched Perfectly!", UVM_LOW) 
             end
-            
-            if (!error_flag) `uvm_info("CHK_W_DATA", "Write Burst Data Matched Perfectly!", UVM_LOW)
             
             if (pkt.bresp[0] != OKAY) begin
                 `uvm_warning("CHK_ERR", $sformatf("Slave Error detected on Write Response! BRESP=%s", pkt.bresp[0]))
             end
         end
     endfunction
-endclass
+endclass: cdma_chk

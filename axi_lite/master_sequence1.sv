@@ -431,10 +431,10 @@ class simple_mode_b2b_seq extends base_master_sequence;
             reg_block.cdmasr.read(status, cdmasr_data);
 	    end while(cdmasr_data[1] == 0);
         `uvm_info("SIMPLE_MODE_B2B_SEQ", $sformatf("Idle = %0h - wait clear",cdmasr_data[1]), UVM_MEDIUM)
-        repeat(3)begin
+        repeat(4)begin
         regi = reg_seq_item::type_id::create("btt_pkt");
             if(!regi.randomize() with {
-                regi.btt_s == MIN;
+                regi.btt_s == SML;
                 regi.sa_addr %16 == 0;
                 regi.da_addr %16 == 0;
                 regi.btt_bytes %16 == 0;
@@ -448,7 +448,7 @@ class simple_mode_b2b_seq extends base_master_sequence;
             reg_block.btt.write(status, regi.btt_bytes);
             `uvm_info("SIMPLE_MODE_B2B_SEQ", "BTT written - Seq starts", UVM_MEDIUM)
         end
-        #3000;
+        #2000;
     endtask
 endclass: simple_mode_b2b_seq
 

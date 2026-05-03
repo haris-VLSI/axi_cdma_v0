@@ -6,6 +6,8 @@ typedef struct {
     bit [63:0] sa_cfg;  // 64-bit Source Address
     bit [63:0] da_cfg;  // 64-bit Destination Address
     bit [25:0] btt_cfg; // 26-bit Bytes to Transfer
+    bit [1:0]  rd_burst;
+    bit [1:0]  wr_burst;
 } cdma_cfg_t;
 
 // Update the class to accept the parameter for compile-time constants
@@ -63,7 +65,7 @@ class cdma_chk extends uvm_component;
         end
     endfunction
 
-    // --- Configuration Monitoring ---
+// --- Configuration Monitoring with Diagnostic Prints ---
     task get_config_data();
         master_seq_item cfg_pkt;
         cdma_cfg_t      cfg_tx;
@@ -73,81 +75,136 @@ class cdma_chk extends uvm_component;
             master_af.get(cfg_pkt);
             // BTT write triggers the Simple DMA transfer
             if(cfg_pkt.awaddr == 'h28 && cfg_pkt.operation == WRITE) begin
-                `uvm_info("CFG_CAP", "--------------------------------------------------", UVM_LOW)
-                `uvm_info("CFG_CAP", "BTT TRIGGER DETECTED: Latched Configuration", UVM_LOW)
+                `uvm_info("CFG_DIAG", "--------------------------------------------------", UVM_LOW)
+                `uvm_info("CFG_DIAG", "BTT TRIGGER DETECTED: Analyzing Control Register", UVM_LOW)
                 
                 cfg_tx.cr_cfg = reg_block.cdmacr.get_mirrored_value();
+                
+                // --- DEBUG PRINTS FOR KEYHOLE BITS ---
+                `uvm_info("BIT_WATCH", $sformatf("Raw CDMACR: 0x%0h", cfg_tx.cr_cfg), UVM_LOW)
+                `uvm_info("BIT_WATCH", $sformatf("Bit [4] (Read Keyhole Target): %b", cfg_tx.cr_cfg[4]), UVM_LOW)
+                `uvm_info("BIT_WATCH", $sformatf("Bit [5] (Write Keyhole Target): %b", cfg_tx.cr_cfg[5]), UVM_LOW)
+                
+                // Temporarily assign based on your current mapping to see the impact
+                cfg_tx.rd_burst = cfg_tx.cr_cfg[4] ? FIXED : INCR;
+                cfg_tx.wr_burst = cfg_tx.cr_cfg[5] ? FIXED : INCR;
+
+                `uvm_info("MODE_SEL", $sformatf("Predicted Mode -> Read: %s | Write: %s", 
+                          (cfg_tx.rd_burst == FIXED) ? "FIXED" : "INCR",
+                          (cfg_tx.wr_burst == FIXED) ? "FIXED" : "INCR"), UVM_LOW)
+
                 sa_lsb = reg_block.sa.get_mirrored_value();
                 sa_msb = reg_block.sa_msb.get_mirrored_value();
                 da_lsb = reg_block.da.get_mirrored_value();
                 da_msb = reg_block.da_msb.get_mirrored_value();
-                cfg_tx.btt_cfg = cfg_pkt.wdata[0]; // Ensure 26-bit slice
-                
+                cfg_tx.btt_cfg = cfg_pkt.wdata[0];
+
                 cfg_tx.sa_cfg  = {sa_msb, sa_lsb};
                 cfg_tx.da_cfg  = {da_msb, da_lsb};
 
-                `uvm_info("CFG_CAP", $sformatf("SA Combined: 0x%0h (MSB: 0x%h, LSB: 0x%h)", cfg_tx.sa_cfg, sa_msb, sa_lsb), UVM_LOW)
-                `uvm_info("CFG_CAP", $sformatf("DA Combined: 0x%0h (MSB: 0x%h, LSB: 0x%h)", cfg_tx.da_cfg, da_msb, da_lsb), UVM_LOW)
-                `uvm_info("CFG_CAP", $sformatf("Control: 0x%h | BTT: %0d bytes", cfg_tx.cr_cfg, cfg_tx.btt_cfg), UVM_LOW)
-                `uvm_info("CFG_CAP", "--------------------------------------------------", UVM_LOW)
+                `uvm_info("CFG_DIAG", $sformatf("SA: 0x%0h | DA: 0x%0h | BTT: %0d", cfg_tx.sa_cfg, cfg_tx.da_cfg, cfg_tx.btt_cfg), UVM_LOW)
+                `uvm_info("CFG_DIAG", "--------------------------------------------------", UVM_LOW)
 
                 cfg_tx_q.push_back(cfg_tx);
                 start_prediction(cfg_tx);
             end
         end
     endtask: get_config_data
-
+    
+    // --- dispatcher ---
     task start_prediction(cdma_cfg_t cfg);
-        // 1. Handle Zero-Length Transfer Error
         if (cfg.btt_cfg == 0) begin
-            `uvm_info("PRED_STATUS", "BTT=0 detected: Predicting Internal Error (DMAIntErr)", UVM_LOW)
             predict_internal_error();
             return;
         end
 
-        `uvm_info("PRED_STATUS", $sformatf("Initiating Parallel Sequencers for BTT: %0d", cfg.btt_cfg), UVM_LOW)
-
-        // 2. Parallel Burst Sequencers
-        // Each channel partitions bursts based on its own address and 4KB boundaries
         fork
-            // MM2S (Read) Thread
-            begin: mm2s_prediction
-                bit [63:0] current_sa = cfg.sa_cfg;
-                int rem_rd = cfg.btt_cfg;
-                
-                while (rem_rd > 0) begin
-                    int rd_burst_size = calculate_4k_partition(current_sa, rem_rd);
-                    `uvm_info("PARTITION", $sformatf("MM2S Split: Addr=0x%0h, Size=%0d", current_sa, rd_burst_size), UVM_LOW)
-                    
-                    predict_read_bus(current_sa, rd_burst_size);
-                    current_sa += rd_burst_size;
-                    rem_rd     -= rd_burst_size;
-                end
+            // MM2S (Read) Dispatcher
+            begin
+                if (cfg.rd_burst == FIXED) predict_keyhole_read(cfg);
+                else                       predict_incr_read(cfg);
             end
 
-            // S2MM (Write) Thread
-            begin: s2mm_prediction
-                bit [63:0] current_da = cfg.da_cfg;
-                int rem_wr = cfg.btt_cfg;
-                
-                while (rem_wr > 0) begin
-                    int wr_burst_size = calculate_4k_partition(current_da, rem_wr);
-                    `uvm_info("PARTITION", $sformatf("S2MM Split: Addr=0x%0h, Size=%0d", current_da, wr_burst_size), UVM_LOW)
-                    
-                    predict_write_bus(current_da, wr_burst_size);
-                    current_da += wr_burst_size;
-                    rem_wr     -= wr_burst_size;
-                end
+            // S2MM (Write) Dispatcher
+            begin
+                if (cfg.wr_burst == FIXED) predict_keyhole_write(cfg);
+                else                       predict_incr_write(cfg);
             end
         join
 
-        // 3. Finalization Handshakes
-        // Verify interrupt and status bits only after both channels finish
         predict_interrupt();
-        
-        // Clear the transaction from the completion tracker queue
         void'(cfg_tx_q.pop_front());
-        `uvm_info("PRED_FINISH", "Transfer complete: Popped from cfg_tx_q", UVM_LOW)
+    endtask
+
+    // --- Path 1: The Known-Good Incremental Logic ---
+    task predict_incr_read(cdma_cfg_t cfg);
+        bit [63:0] cur_addr = cfg.sa_cfg;
+        int rem_btt = cfg.btt_cfg;
+        while (rem_btt > 0) begin
+            int split = calculate_4k_partition(cur_addr, rem_btt);
+            predict_read_bus(cur_addr, split);
+            cur_addr += split;
+            rem_btt  -= split;
+        end
+    endtask
+
+    task predict_incr_write(cdma_cfg_t cfg);
+        bit [63:0] cur_addr = cfg.da_cfg;
+        int rem_btt = cfg.btt_cfg;
+        while (rem_btt > 0) begin
+            int split = calculate_4k_partition(cur_addr, rem_btt);
+            predict_write_bus(cur_addr, split);
+            cur_addr += split;
+            rem_btt  -= split;
+        end
+    endtask
+
+    task predict_keyhole_read(cdma_cfg_t cfg);
+        bit [63:0] bus_addr  = cfg.sa_cfg; 
+        bit [63:0] virt_addr = cfg.sa_cfg; 
+        bit [63:0] math_addr;
+        int rem_btt = cfg.btt_cfg;
+        bit is_first = 1'b1;
+        
+        while (rem_btt > 0) begin
+            // Track the 4KB boundary using the incrementing virtual pointer
+            int split = calculate_4k_partition(virt_addr, rem_btt);
+            
+            // KEY: Use bus_addr for the 1st burst, realigned base for the rest
+            math_addr = (is_first) ? bus_addr : (bus_addr & ~(BUS_BYTES-1)); 
+            
+            `uvm_info("KEYHOLE_RD", $sformatf("Fixed BusAddr: 0x%0h | MathAddr: 0x%0h | Split: %0d", 
+                      bus_addr, math_addr, split), UVM_MEDIUM)
+            
+            predict_read_bus(bus_addr, split, math_addr);
+            
+            virt_addr += split; // Advance virtual pointer to detect next boundary
+            rem_btt   -= split;
+            is_first   = 1'b0;
+        end
+    endtask
+
+    task predict_keyhole_write(cdma_cfg_t cfg);
+        bit [63:0] bus_addr  = cfg.da_cfg;
+        bit [63:0] virt_addr = cfg.da_cfg;
+        bit [63:0] math_addr;
+        int rem_btt = cfg.btt_cfg;
+        bit is_first = 1'b1;
+        
+        while (rem_btt > 0) begin
+            int split = calculate_4k_partition(virt_addr, rem_btt);
+            
+            math_addr = (is_first) ? bus_addr : (bus_addr & ~(BUS_BYTES-1)); 
+            
+            `uvm_info("KEYHOLE_WR", $sformatf("Fixed BusAddr: 0x%0h | MathAddr: 0x%0h | Split: %0d", 
+                      bus_addr, math_addr, split), UVM_MEDIUM)
+            
+            predict_write_bus(bus_addr, split, math_addr);
+            
+            virt_addr += split;
+            rem_btt   -= split;
+            is_first   = 1'b0;
+        end
     endtask
 
     // DataMover ensures no burst crosses 4KB boundary[cite: 1]
@@ -174,67 +231,83 @@ class cdma_chk extends uvm_component;
         return num_beats - 1;
     endfunction
 
-    task predict_read_bus(bit [63:0] addr, int bytes);
+    task predict_read_bus(bit [63:0] addr, int bytes, bit [63:0] math_addr = 0);
         slave_seq_item act_rd;
-        bit [2:0] exp_size = predict_size();
-        bit [7:0] exp_len = predict_length(addr, bytes);
-        int bytes_pushed = 0;
-        int start_lane = addr % BUS_BYTES; // Offset for unaligned start
         int current_beat_start_lane;
+        // Use math_addr for all internal stream calculations (length, lanes)
+        bit [63:0] target_len_addr = (math_addr == 0) ? addr : math_addr;
+        
+        bit [2:0] exp_size = predict_size();
+        bit [7:0] exp_len  = predict_length(target_len_addr, bytes);
+        int bytes_pushed = 0;
         
         rd_slave_af.get(act_rd);
         
-        `uvm_info("RD_CHECK", $sformatf("Checking Read Signal: Exp Addr=0x%0h, Len=%0d", addr, exp_len), UVM_LOW)
+        `uvm_info("RD_CHECK", $sformatf("Read Tracking: BusAddr=0x%0h | MathAddr=0x%0h | ExpLen=%0d", 
+                  addr, target_len_addr, exp_len), UVM_HIGH)
         
-        if (act_rd.araddr !== addr) `uvm_error("AR_MISMATCH", $sformatf("Exp ARADDR: %h, Act: %h", addr, act_rd.araddr))
+        // Physical Address Check
+        if (act_rd.araddr !== addr)    `uvm_error("AR_MISMATCH", $sformatf("Exp ADDR: %h, Act: %h", addr, act_rd.araddr))
+        // Realignment-aware Length Check
         if (act_rd.arlen  !== exp_len) `uvm_error("AR_MISMATCH", $sformatf("Exp ARLEN: %0d, Act: %0d", exp_len, act_rd.arlen))
         
         foreach (act_rd.rdata[beat]) begin
-            // Check Read Response
             check_read_response(act_rd.rresp[beat], beat);
-
-            // Calculate which byte lane to start from for this beat
-            current_beat_start_lane = (beat == 0) ? start_lane : 0;
+            
+            // Calculate lane start: use target_len_addr to handle realignment to Lane 0
+            current_beat_start_lane = (beat == 0) ? (target_len_addr % BUS_BYTES) : 0;
 
             for (int i = current_beat_start_lane; i < BUS_BYTES; i++) begin
-                // Only push into the queue if we haven't exceeded the 'bytes' count
                 if (bytes_pushed < bytes) begin
                     expected_data_q.push_back(act_rd.rdata[beat][(i*8) +: 8]);
                     bytes_pushed++;
                 end
             end
-            `uvm_info("RD_DATA", $sformatf("Beat %0d: Pushed valid bytes. Total so far: %0d", beat, bytes_pushed), UVM_HIGH)
         end
+        `uvm_info("RD_DATA", $sformatf("Burst Complete: Pushed %0d bytes to expected_data_q", bytes_pushed), UVM_MEDIUM)
     endtask
-
-    task predict_write_bus(bit [63:0] addr, int bytes);
+    
+    task predict_write_bus(bit [63:0] addr, int bytes, bit [63:0] math_addr = 0);
         slave_seq_item act_wr;
+        bit [63:0] target_len_addr = (math_addr == 0) ? addr : math_addr;
+        
         bit [2:0] exp_size = predict_size();
-        //bit [7:0] exp_len  = predict_length(bytes, exp_size);
-        bit [7:0] exp_len = predict_length(addr, bytes);
+        bit [7:0] exp_len  = predict_length(target_len_addr, bytes);
         bit [STRB_WIDTH-1:0] exp_wstrb; 
+        byte exp_byte, act_byte;
 
         wr_slave_af.get(act_wr);
 
-        `uvm_info("WR_CHECK", $sformatf("Checking Write Signal: Exp Addr=0x%0h, Len=%0d", addr, exp_len), UVM_LOW)
+        `uvm_info("WR_CHECK", $sformatf("Write Tracking: BusAddr=0x%0h | MathAddr=0x%0h | ExpLen=%0d", 
+                  addr, target_len_addr, exp_len), UVM_HIGH)
 
-        if (act_wr.awaddr !== addr) `uvm_error("AW_MISMATCH", $sformatf("Exp AWADDR: %h, Act: %h", addr, act_wr.awaddr))
+        if (act_wr.awaddr !== addr)    `uvm_error("AW_MISMATCH", $sformatf("Exp AWADDR: %h, Act: %h", addr, act_wr.awaddr))
         if (act_wr.awlen  !== exp_len) `uvm_error("AW_MISMATCH", $sformatf("Exp AWLEN: %0d, Act: %0d", exp_len, act_wr.awlen))
 
         for (int beat = 0; beat <= exp_len; beat++) begin
-            exp_wstrb = predict_wstrb(addr, beat, exp_len, bytes);
+            // predict_wstrb MUST use target_len_addr to correctly mask realigned lanes
+            exp_wstrb = predict_wstrb(target_len_addr, beat, exp_len, bytes);
             
-            `uvm_info("STRB_DEBUG", $sformatf("Beat %0d | Predicted WSTROBE: %b", beat, exp_wstrb), UVM_HIGH)
-
             if (act_wr.wstrobe[beat] !== exp_wstrb)
                 `uvm_error("WSTRB_MISMATCH", $sformatf("Beat %0d | Exp: %b, Act: %b", beat, exp_wstrb, act_wr.wstrobe[beat]))
+            else
+                `uvm_info("WSTRB_MATCH", $sformatf("Beat %0d | Exp: %b, Act: %b", beat, exp_wstrb, act_wr.wstrobe[beat]),UVM_LOW)
 
             for (int i = 0; i < BUS_BYTES; i++) begin
                 if (exp_wstrb[i]) begin
-                    byte exp_byte = expected_data_q.pop_front();
-                    byte act_byte = act_wr.wdata[beat][(i*8) +: 8];
+                    // Safety check to prevent popping from empty queue during desync
+                    if (expected_data_q.size() == 0) begin
+                        `uvm_error("QUEUE_EMPTY", $sformatf("Beat %0d Lane %0d: Data missing from Read side!", beat, i))
+                        return; 
+                    end
+                    
+                    exp_byte = expected_data_q.pop_front();
+                    act_byte = act_wr.wdata[beat][(i*8) +: 8];
+                    
                     if (act_byte !== exp_byte)
                         `uvm_error("WDATA_MISMATCH", $sformatf("Beat %0d Byte %0d | Exp: %h, Act: %h", beat, i, exp_byte, act_byte))
+                    else
+                        `uvm_info("WDATA_MATCH", $sformatf("Beat %0d Byte %0d | Exp: %h, Act: %h", beat, i, exp_byte, act_byte),UVM_LOW)
                 end
             end
         end

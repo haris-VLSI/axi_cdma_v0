@@ -81,7 +81,7 @@ class cdma_chk extends uvm_component;
                 sa_msb = reg_block.sa_msb.get_mirrored_value();
                 da_lsb = reg_block.da.get_mirrored_value();
                 da_msb = reg_block.da_msb.get_mirrored_value();
-                cfg_tx.btt_cfg = cfg_pkt.wdata[0][25:0]; // Ensure 26-bit slice
+                cfg_tx.btt_cfg = cfg_pkt.wdata[0]; // Ensure 26-bit slice
                 
                 cfg_tx.sa_cfg  = {sa_msb, sa_lsb};
                 cfg_tx.da_cfg  = {da_msb, da_lsb};
@@ -95,9 +95,9 @@ class cdma_chk extends uvm_component;
                 start_prediction(cfg_tx);
             end
         end
-    endtask
+    endtask: get_config_data
 
-task start_prediction(cdma_cfg_t cfg);
+    task start_prediction(cdma_cfg_t cfg);
         // 1. Handle Zero-Length Transfer Error
         if (cfg.btt_cfg == 0) begin
             `uvm_info("PRED_STATUS", "BTT=0 detected: Predicting Internal Error (DMAIntErr)", UVM_LOW)
@@ -258,11 +258,15 @@ task start_prediction(cdma_cfg_t cfg);
 
     task predict_internal_error();
         bit [31:0] err_status = reg_block.cdmasr.get_mirrored_value();
+        while (reg_block.cdmasr.is_busy())begin
+            @(posedge obj.mas_if[0].aclk);
+        end
         err_status[4] = 1'b1; // DMAIntErr[cite: 1]
         err_status[1] = 1'b1; // Idle[cite: 1]
         void'(reg_block.cdmasr.predict(err_status));
         `uvm_info("STATUS_UPD", $sformatf("BTT=0 detected. Mirrored CDMASR: 0x%h", err_status), UVM_LOW)
     endtask
+
 // Task to predict status register updates and interrupt pin assertion
     task predict_interrupt();
         bit [31:0] current_cr     = reg_block.cdmacr.get_mirrored_value();
@@ -344,7 +348,7 @@ task start_prediction(cdma_cfg_t cfg);
 
             `uvm_info("RESET_EXE", "Reset Release: Checker is synchronized and ready.", UVM_LOW)
         end
-    endtask
+    endtask: reset_handler
 
     // --- Specific Write Response Verification ---
     task check_write_response(slave_seq_item act_wr);

@@ -209,6 +209,7 @@ class simple_mode_fixed_seq extends base_master_sequence;
         reg_block.sa.read(status,temp_data);
         reg_block.da.read(status,temp_data);
         reg_block.btt.read(status,temp_data);
+        wait(obj.mas_if[0].cdma_introut);
         reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_mode_fixed_seq
@@ -264,7 +265,7 @@ class simple_dma_slave_error_seq extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_SLVERR_SEQ", "DMASlvErr asserted",UVM_LOW)
         end
-        reg_block.cdmacr.write(status, 32'h10004);
+//        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_dma_slave_error_seq
 
@@ -319,7 +320,7 @@ class simple_dma_decode_error_seq extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_DECERR_SEQ", "DMADecErr asserted",UVM_LOW)
         end
-        reg_block.cdmacr.write(status, 32'h10004);
+//        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_dma_decode_error_seq
 
@@ -375,7 +376,7 @@ class simple_dma_int_error_seq extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", "DMAIntErr asserted",UVM_LOW)
         end
-        reg_block.cdmacr.write(status, 32'h10004);
+//        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_dma_int_error_seq
 
@@ -417,6 +418,7 @@ class simple_dma_4k_boundary_seq extends base_master_sequence;
         reg_block.btt.write(status,regi.btt_bytes);
         `uvm_info("SIMPLE_MODE_DMA_4KB_SEQ", $sformatf("Configured BTT: %0d - Transfer started!",regi.btt_bytes), UVM_MEDIUM)
 
+        wait(obj.mas_if[0].cdma_introut);
         reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_dma_4k_boundary_seq

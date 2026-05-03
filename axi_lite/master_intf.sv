@@ -95,7 +95,7 @@
       output   arregion;
       output   arsize;
       output   arvalid;
-      input    cdma_introut;     //added
+      //input    cdma_introut;     //added
    endclocking:mas_drv_cb
 
    clocking mas_mon_cb @(posedge aclk);

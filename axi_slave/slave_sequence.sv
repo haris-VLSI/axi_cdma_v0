@@ -98,7 +98,8 @@ class base_slave_error_sequence extends uvm_sequence #(slave_seq_item);
 	                                        awsize == resp_pkt.awsize;
 	                                        awburst == resp_pkt.awburst;
 	                                        bid == awid;
-	                                        bresp == OKAY;
+	                                        bresp == SLVERR;
+	                                        //bresp == OKAY;
 	                                    })
             else  `uvm_error (get_full_name() ,"Packet Randomization Fail")
             finish_item(pkt);

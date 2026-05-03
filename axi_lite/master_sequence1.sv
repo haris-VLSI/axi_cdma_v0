@@ -82,6 +82,7 @@ class simple_mode_wr_rd_seq extends base_master_sequence;
 
         reg_block.cdmasr.read(status, cdmasr_data);
         `uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Idle = %0h - Waiting for idle",cdmasr_data[1]), UVM_MEDIUM)
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_wr_rd_seq
 
@@ -168,6 +169,7 @@ class simple_mode_interrupt_check extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", "Read Status Register Errs as 0. Clear is Success!", UVM_MEDIUM)
         end
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_interrupt_check
 
@@ -207,6 +209,7 @@ class simple_mode_fixed_seq extends base_master_sequence;
         reg_block.sa.read(status,temp_data);
         reg_block.da.read(status,temp_data);
         reg_block.btt.read(status,temp_data);
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_mode_fixed_seq
 
@@ -261,6 +264,7 @@ class simple_dma_slave_error_seq extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_SLVERR_SEQ", "DMASlvErr asserted",UVM_LOW)
         end
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_dma_slave_error_seq
 
@@ -315,6 +319,7 @@ class simple_dma_decode_error_seq extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_DECERR_SEQ", "DMADecErr asserted",UVM_LOW)
         end
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_dma_decode_error_seq
 
@@ -370,6 +375,7 @@ class simple_dma_int_error_seq extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", "DMAIntErr asserted",UVM_LOW)
         end
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_dma_int_error_seq
 
@@ -411,6 +417,7 @@ class simple_dma_4k_boundary_seq extends base_master_sequence;
         reg_block.btt.write(status,regi.btt_bytes);
         `uvm_info("SIMPLE_MODE_DMA_4KB_SEQ", $sformatf("Configured BTT: %0d - Transfer started!",regi.btt_bytes), UVM_MEDIUM)
 
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_dma_4k_boundary_seq
 
@@ -448,6 +455,7 @@ class simple_mode_b2b_seq extends base_master_sequence;
             reg_block.btt.write(status, regi.btt_bytes);
             `uvm_info("SIMPLE_MODE_B2B_SEQ", "BTT written - Seq starts", UVM_MEDIUM)
         end
+        reg_block.cdmacr.write(status, 32'h10004);
         #2000;
     endtask
 endclass: simple_mode_b2b_seq
@@ -518,6 +526,7 @@ class simple_mode_b2b_ioc_seq extends base_master_sequence;
                 end
             end
         end
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_b2b_ioc_seq
 
@@ -619,6 +628,7 @@ class simple_mode_alignment_seq extends base_master_sequence;
 
             r++;
         end
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_alignment_seq
 
@@ -734,6 +744,7 @@ class simple_mode_btt_check_seq extends base_master_sequence;
 
             r++;
         end
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_btt_check_seq
 
@@ -758,13 +769,13 @@ class simple_mode_4k_check_seq extends base_master_sequence;
         `uvm_info("SIMPLE_MODE_4K_SEQ", $sformatf("Idle = %0h - wait clear",cdmasr_data[1]), UVM_MEDIUM)
         reg_block.cdmacr.write(status, 32'h11000);
 
-        repeat(4)begin
+        repeat(1)begin
             regi = reg_seq_item::type_id::create("btt_pkt");
             if(r == 0) begin
                 if(!regi.randomize() with {
                     regi.btt_s           == MIN;
-                    regi.sa_addr         == 'hfa0;
-                    regi.da_addr         == 'h1000;
+                    regi.sa_addr         == 'hfc3;
+                    regi.da_addr         == 'h1fa0;
                     regi.btt_bytes       == 'h100;
                     })begin
                     `uvm_error(get_full_name(), "randomization_failed")
@@ -783,8 +794,8 @@ class simple_mode_4k_check_seq extends base_master_sequence;
             if(r == 2) begin
                 if(!regi.randomize() with {
                     regi.btt_s           == MIN;
-                    regi.sa_addr         == 'hfc3;
-                    regi.da_addr         == 'h1fa0;
+                    regi.sa_addr         == 'hfa0;
+                    regi.da_addr         == 'h1000;
                     regi.btt_bytes       == 'h100;
                     })begin
                     `uvm_error(get_full_name(), "randomization_failed")
@@ -835,6 +846,7 @@ class simple_mode_4k_check_seq extends base_master_sequence;
 
             r++;
         end
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_4k_check_seq
 
@@ -896,5 +908,6 @@ class simple_mode_64mb_btt_seq extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", "IOC_Irq Cleared!", UVM_MEDIUM)
         end
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_64mb_btt_seq

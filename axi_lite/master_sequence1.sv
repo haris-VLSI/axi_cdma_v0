@@ -769,7 +769,7 @@ class simple_mode_4k_check_seq extends base_master_sequence;
         `uvm_info("SIMPLE_MODE_4K_SEQ", $sformatf("Idle = %0h - wait clear",cdmasr_data[1]), UVM_MEDIUM)
         reg_block.cdmacr.write(status, 32'h11000);
 
-        repeat(1)begin
+        repeat(4)begin
             regi = reg_seq_item::type_id::create("btt_pkt");
             if(r == 0) begin
                 if(!regi.randomize() with {

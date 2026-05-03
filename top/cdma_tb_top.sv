@@ -162,9 +162,9 @@ module top;
 
     initial begin
         //run_test ("simple_mode_64mb_btt_test");           //19 to run
-        //run_test ("simple_mode_b2b_ioc_test");            //18 working
+        run_test ("simple_mode_b2b_ioc_test");            //18 working
         //run_test ("simple_mode_b2b_test");                //17 working SBD failed for b2b tx
-        run_test ("simple_mode_4k_check_test");           //16 working
+        //run_test ("simple_mode_4k_check_test");           //16 working
         //run_test ("simple_mode_btt_check_test");          //15 working
         //run_test ("simple_mode_alignment_test");          //14 working
         //run_test ("simple_dma_4k_boundary_test");         //13 working

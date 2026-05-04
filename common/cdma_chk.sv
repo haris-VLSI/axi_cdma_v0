@@ -1,5 +1,5 @@
 // User defined Parameter
-parameter int AXI_DATA_WIDTH = 128;
+parameter int AXI_DATA_WIDTH = 16;
 
 typedef struct {
     bit [31:0] cr_cfg;
@@ -10,6 +10,7 @@ typedef struct {
     bit [1:0]  wr_burst;
 } cdma_cfg_t;
 
+// Update the class to accept the parameter for compile-time constants
 class cdma_chk extends uvm_component;
     `uvm_component_utils(cdma_chk)
 
@@ -17,14 +18,13 @@ class cdma_chk extends uvm_component;
     uvm_tlm_analysis_fifo #(slave_seq_item)  rd_slave_af;
     uvm_tlm_analysis_fifo #(slave_seq_item)  wr_slave_af;
 
-    virtual reset_intf reset_if;
     cdma_reg_block  reg_block;
-    config_obj      obj;
+    config_obj            obj;
     cdma_cfg_t      cfg_tx_q[$];
     byte            expected_data_q[$];
 
     // Define local constants based on the parameter
-    localparam BUS_BYTES = AXI_DATA_WIDTH/8;
+    localparam BUS_BYTES = AXI_DATA_WIDTH;
     localparam STRB_WIDTH = BUS_BYTES;
 
     function new(string name="cdma_chk", uvm_component parent);
@@ -37,8 +37,6 @@ class cdma_chk extends uvm_component;
         wr_slave_af = new("wr_slave_af", this);
         if(!uvm_config_db #(config_obj) :: get(null, "", "config_obj", obj))
             `uvm_fatal (get_full_name(), "config_db_not_accessable_in_checker");
-        if(!uvm_config_db #(virtual reset_intf)::get(null,"","reset_if", reset_if))
-            `uvm_fatal (get_full_name(), "reset_intf_not_accessable");
     endfunction
 
     task main_phase(uvm_phase phase);
@@ -48,14 +46,17 @@ class cdma_chk extends uvm_component;
         join
     endtask
 
+// --- Final Cleanup Check ---
     function void check_phase(uvm_phase phase);
         super.check_phase(phase);
+        
         // Check if all predicted data was actually moved to the destination
         if (expected_data_q.size() != 0) begin
             `uvm_error("EOT_CLEANUP", $sformatf("End of Test: %0d bytes still remaining in expected_data_q!", expected_data_q.size()))
         end else begin
             `uvm_info("EOT_CLEANUP", "End of Test: expected_data_q is empty. All data accounted for.", UVM_LOW)
         end
+        
         // Check if all programmed configurations were processed
         if (cfg_tx_q.size() != 0) begin
             `uvm_error("EOT_CLEANUP", $sformatf("End of Test: %0d transfers were triggered but never completed!", cfg_tx_q.size()))
@@ -74,21 +75,23 @@ class cdma_chk extends uvm_component;
             master_af.get(cfg_pkt);
             // BTT write triggers the Simple DMA transfer
             if(cfg_pkt.awaddr == 'h28 && cfg_pkt.operation == WRITE) begin
+                `uvm_info("CFG_DIAG", "--------------------------------------------------", UVM_LOW)
                 `uvm_info("CFG_DIAG", "BTT TRIGGER DETECTED: Analyzing Control Register", UVM_LOW)
-
+                
                 cfg_tx.cr_cfg = reg_block.cdmacr.get_mirrored_value();
-
+                
+                // --- DEBUG PRINTS FOR KEYHOLE BITS ---
                 `uvm_info("BIT_WATCH", $sformatf("Raw CDMACR: 0x%0h", cfg_tx.cr_cfg), UVM_LOW)
-                `uvm_info("BIT_WATCH", $sformatf("Bit [4] Keyhole Read : %b", cfg_tx.cr_cfg[4]), UVM_LOW)
-                `uvm_info("BIT_WATCH", $sformatf("Bit [5] Keyhole Write : %b", cfg_tx.cr_cfg[5]), UVM_LOW)
+                `uvm_info("BIT_WATCH", $sformatf("Bit [4] (Read Keyhole Target): %b", cfg_tx.cr_cfg[4]), UVM_LOW)
+                `uvm_info("BIT_WATCH", $sformatf("Bit [5] (Write Keyhole Target): %b", cfg_tx.cr_cfg[5]), UVM_LOW)
                 
                 // Temporarily assign based on your current mapping to see the impact
                 cfg_tx.rd_burst = cfg_tx.cr_cfg[4] ? FIXED : INCR;
                 cfg_tx.wr_burst = cfg_tx.cr_cfg[5] ? FIXED : INCR;
 
                 `uvm_info("MODE_SEL", $sformatf("Predicted Mode -> Read: %s | Write: %s", 
-                        (cfg_tx.rd_burst == FIXED) ? "FIXED" : "INCR",
-                        (cfg_tx.wr_burst == FIXED) ? "FIXED" : "INCR"), UVM_LOW)
+                          (cfg_tx.rd_burst == FIXED) ? "FIXED" : "INCR",
+                          (cfg_tx.wr_burst == FIXED) ? "FIXED" : "INCR"), UVM_LOW)
 
                 sa_lsb = reg_block.sa.get_mirrored_value();
                 sa_msb = reg_block.sa_msb.get_mirrored_value();
@@ -100,6 +103,7 @@ class cdma_chk extends uvm_component;
                 cfg_tx.da_cfg  = {da_msb, da_lsb};
 
                 `uvm_info("CFG_DIAG", $sformatf("SA: 0x%0h | DA: 0x%0h | BTT: %0d", cfg_tx.sa_cfg, cfg_tx.da_cfg, cfg_tx.btt_cfg), UVM_LOW)
+                `uvm_info("CFG_DIAG", "--------------------------------------------------", UVM_LOW)
 
                 cfg_tx_q.push_back(cfg_tx);
                 start_prediction(cfg_tx);
@@ -132,14 +136,15 @@ class cdma_chk extends uvm_component;
         void'(cfg_tx_q.pop_front());
     endtask
 
+    // --- Path 1: The Known-Good Incremental Logic ---
     task predict_incr_read(cdma_cfg_t cfg);
         bit [63:0] cur_addr = cfg.sa_cfg;
         int rem_btt = cfg.btt_cfg;
         while (rem_btt > 0) begin
             int split = calculate_4k_partition(cur_addr, rem_btt);
             predict_read_bus(cur_addr, split);
-            cur_addr    = cur_addr + split;
-            rem_btt     = rem_btt  - split;
+            cur_addr += split;
+            rem_btt  -= split;
         end
     endtask
 
@@ -149,8 +154,8 @@ class cdma_chk extends uvm_component;
         while (rem_btt > 0) begin
             int split = calculate_4k_partition(cur_addr, rem_btt);
             predict_write_bus(cur_addr, split);
-            cur_addr    = cur_addr + split;
-            rem_btt     = rem_btt - split;
+            cur_addr += split;
+            rem_btt  -= split;
         end
     endtask
 
@@ -162,7 +167,7 @@ class cdma_chk extends uvm_component;
         bit is_first = 1'b1;
         
         while (rem_btt > 0) begin
-            // Track the 4KB boundary using the incrementing virtual address
+            // Track the 4KB boundary using the incrementing virtual pointer
             int split = calculate_4k_partition(virt_addr, rem_btt);
             
             // KEY: Use bus_addr for the 1st burst, realigned base for the rest
@@ -173,9 +178,9 @@ class cdma_chk extends uvm_component;
             
             predict_read_bus(bus_addr, split, math_addr);
             
-            virt_addr   = virt_addr + split;
-            rem_btt     = rem_btt - split;
-            is_first    = 1'b0;
+            virt_addr += split; // Advance virtual pointer to detect next boundary
+            rem_btt   -= split;
+            is_first   = 1'b0;
         end
     endtask
 
@@ -196,8 +201,8 @@ class cdma_chk extends uvm_component;
             
             predict_write_bus(bus_addr, split, math_addr);
             
-            virt_addr   = virt_addr + split;
-            rem_btt     = rem_btt - split;
+            virt_addr += split;
+            rem_btt   -= split;
             is_first   = 1'b0;
         end
     endtask
@@ -388,14 +393,13 @@ class cdma_chk extends uvm_component;
             `uvm_error("INT_MISMATCH", "Interrupt signal mismatch!")
     endtask
 
+    // --- Reset Logic ---
     task reset_handler();
         forever begin
-            // 1. Wait for either Hardware Reset (Active Low) or Software Reset bit
-            // Hardware reset: areset_n
+            // 1. Wait for either Hardware Reset (Active Low) or Software Reset bit (Self-clearing)
+            // Hardware reset: s_axi_lite_aresetn
             // Software reset: CDMACR Bit 2
-            wait(reset_if.reset_n === 1'b0 || reg_block.cdmacr.Reset.get_mirrored_value() == 1'b1);
-            //wait(obj.mas_if[0].areset_n === 1'b0 || reg_block.cdmacr.Reset.get_mirrored_value() == 1'b1);
-            
+            wait(obj.mas_if[0].areset_n === 1'b0 || reg_block.cdmacr.Reset.get_mirrored_value() == 1'b1);
             
             `uvm_info("RESET_EXE", "Reset Event Detected: Flushing all internal pipes", UVM_LOW)
             
@@ -408,8 +412,7 @@ class cdma_chk extends uvm_component;
 
             // 4. Wait for the reset condition to be released
             // Note: Software reset is self-clearing once the internal reset is complete
-            wait(reset_if.reset_n === 1'b1);
-            //wait(obj.mas_if[0].areset_n === 1'b1);
+            wait(obj.mas_if[0].areset_n === 1'b1);
             
             // Wait for software reset bit to clear if it was triggered
             if (reg_block.cdmacr.Reset.get_mirrored_value() == 1'b1) begin

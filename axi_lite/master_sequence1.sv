@@ -80,9 +80,10 @@ class simple_mode_wr_rd_seq extends base_master_sequence;
         `uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Configured Registers: \nSA: %0d \nDA: %0d \nBTT: %0d \nTransfer started!",regi.sa_addr,regi.da_addr,regi.btt_bytes), UVM_MEDIUM)
         `uvm_info("SIMPLE_MODE_INCR_SEQ", "BTT written - Seq starts", UVM_MEDIUM)
 
-        reg_block.cdmasr.read(status, cdmasr_data);
-        `uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Idle = %0h - Waiting for idle",cdmasr_data[1]), UVM_MEDIUM)
-        reg_block.cdmacr.write(status, 32'h10004);
+        //wait(obj.mas_if[0].cdma_introut);
+        //reg_block.cdmasr.read(status, cdmasr_data);
+        //`uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Idle = %0h - Waiting for idle",cdmasr_data[1]), UVM_MEDIUM)
+        //reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_wr_rd_seq
 
@@ -209,8 +210,8 @@ class simple_mode_fixed_seq extends base_master_sequence;
         reg_block.sa.read(status,temp_data);
         reg_block.da.read(status,temp_data);
         reg_block.btt.read(status,temp_data);
-        wait(obj.mas_if[0].cdma_introut);
-        reg_block.cdmacr.write(status, 32'h10004);
+        //wait(obj.mas_if[0].cdma_introut);
+        //reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_mode_fixed_seq
 
@@ -418,8 +419,8 @@ class simple_dma_4k_boundary_seq extends base_master_sequence;
         reg_block.btt.write(status,regi.btt_bytes);
         `uvm_info("SIMPLE_MODE_DMA_4KB_SEQ", $sformatf("Configured BTT: %0d - Transfer started!",regi.btt_bytes), UVM_MEDIUM)
 
-        wait(obj.mas_if[0].cdma_introut);
-        reg_block.cdmacr.write(status, 32'h10004);
+        //wait(obj.mas_if[0].cdma_introut);
+        //reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass:simple_dma_4k_boundary_seq
 
@@ -630,7 +631,7 @@ class simple_mode_alignment_seq extends base_master_sequence;
 
             r++;
         end
-        reg_block.cdmacr.write(status, 32'h10004);
+        //reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_alignment_seq
 
@@ -746,7 +747,7 @@ class simple_mode_btt_check_seq extends base_master_sequence;
 
             r++;
         end
-        reg_block.cdmacr.write(status, 32'h10004);
+        //reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_btt_check_seq
 
@@ -848,7 +849,7 @@ class simple_mode_4k_check_seq extends base_master_sequence;
 
             r++;
         end
-        reg_block.cdmacr.write(status, 32'h10004);
+        //reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_4k_check_seq
 

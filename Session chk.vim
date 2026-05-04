@@ -102,8 +102,9 @@ badd +109 ../../cdma/axi_master/master_seq.sv
 badd +72 axi_lite/master_sequence.sv
 badd +437 axi_lite/master_sequence1.sv
 badd +14 common/cov_cdma.sv
-badd +0 common/cdma_checker.sv
+badd +7 common/cdma_chk.sv
 badd +0 cdma_sys/master_intf.sv
+badd +1 common/cdma_checker.sv
 argglobal
 silent! argdel *
 set stal=2
@@ -369,12 +370,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 55 - ((0 * winheight(0) + 10) / 21)
+let s:l = 39 - ((0 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-55
-normal! 025|
+39
+normal! 09|
 wincmd w
 argglobal
 if bufexists('common/cdma_checker.sv') | buffer common/cdma_checker.sv | else | edit common/cdma_checker.sv | endif
@@ -496,13 +497,14 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 212 - ((9 * winheight(0) + 10) / 21)
+let s:l = 291 - ((10 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-212
-normal! 020|
+291
+normal! 050|
 wincmd w
+2wincmd w
 exe 'vert 1resize ' . ((&columns * 1 + 50) / 101)
 exe 'vert 2resize ' . ((&columns * 99 + 50) / 101)
 tabedit axi_slave/slave_sequence.sv
@@ -763,14 +765,13 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 752 - ((10 * winheight(0) + 10) / 21)
+let s:l = 194 - ((10 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-752
-normal! 07|
+194
+normal! 09|
 wincmd w
-2wincmd w
 exe 'vert 1resize ' . ((&columns * 1 + 50) / 101)
 exe 'vert 2resize ' . ((&columns * 99 + 50) / 101)
 tabedit top/cdma_env.sv
@@ -904,7 +905,7 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 54 - ((9 * winheight(0) + 10) / 21)
+let s:l = 54 - ((0 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
@@ -1031,12 +1032,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 595 - ((14 * winheight(0) + 10) / 21)
+let s:l = 209 - ((10 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-595
-normal! 026|
+209
+normal! 013|
 wincmd w
 exe 'vert 1resize ' . ((&columns * 1 + 50) / 101)
 exe 'vert 2resize ' . ((&columns * 99 + 50) / 101)
@@ -1432,12 +1433,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 167 - ((4 * winheight(0) + 11) / 22)
+let s:l = 169 - ((6 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-167
-normal! 033|
+169
+normal! 08|
 tabedit ~/AXI_CDMA/riviera/sim_txt.log
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -1569,12 +1570,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 1857 - ((7 * winheight(0) + 10) / 21)
+let s:l = 10095 - ((0 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-1857
-normal! 0110|
+10095
+normal! 0
 wincmd w
 argglobal
 if bufexists('~/AXI_CDMA/riviera/compile.log') | buffer ~/AXI_CDMA/riviera/compile.log | else | edit ~/AXI_CDMA/riviera/compile.log | endif
@@ -1705,7 +1706,7 @@ normal! 0
 wincmd w
 exe 'vert 1resize ' . ((&columns * 99 + 50) / 101)
 exe 'vert 2resize ' . ((&columns * 1 + 50) / 101)
-tabnext 3
+tabnext 2
 set stal=1
 if exists('s:wipebuf') && s:wipebuf != bufnr('%')
   silent exe 'bwipe ' . s:wipebuf

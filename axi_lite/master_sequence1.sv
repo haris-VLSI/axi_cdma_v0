@@ -476,7 +476,7 @@ class simple_mode_b2b_ioc_seq extends base_master_sequence;
 
         `uvm_info("SIMPLE_MODE_B2B_IOC_SEQ", "Starting Simple Mode INCR Transfer Sequence", UVM_MEDIUM)
 
-        repeat(3)begin
+        repeat(4)begin
         regi = reg_seq_item::type_id::create("btt_pkt");
             if(!regi.randomize() with {
                 regi.btt_s == MIN;
@@ -556,7 +556,8 @@ class simple_mode_alignment_seq extends base_master_sequence;
 
         repeat(4)begin
             regi = reg_seq_item::type_id::create("btt_pkt");
-            if(r == 0) begin
+            case (r)
+                0:begin
                 if(!regi.randomize() with {
                     regi.btt_s           == MIN;
                     regi.sa_addr %16     == 0;
@@ -565,8 +566,8 @@ class simple_mode_alignment_seq extends base_master_sequence;
                     })begin
                     `uvm_error(get_full_name(), "randomization_failed")
                 end
-            end
-            if(r == 1) begin
+                end
+                1:begin
                 if(!regi.randomize() with {
                     regi.btt_s           == MIN;
                     regi.sa_addr %16     != 0;
@@ -576,7 +577,7 @@ class simple_mode_alignment_seq extends base_master_sequence;
                     `uvm_error(get_full_name(), "randomization_failed")
                 end
             end
-            if(r == 2) begin
+                2:begin
                 if(!regi.randomize() with {
                     regi.btt_s           == MIN;
                     regi.sa_addr %16     == 0;
@@ -586,7 +587,7 @@ class simple_mode_alignment_seq extends base_master_sequence;
                     `uvm_error(get_full_name(), "randomization_failed")
                 end
             end
-            if(r == 3) begin
+                3:begin
                 if(!regi.randomize() with {
                     regi.btt_s           == MIN;
                     regi.sa_addr %16     != 0;
@@ -596,6 +597,7 @@ class simple_mode_alignment_seq extends base_master_sequence;
                     `uvm_error(get_full_name(), "randomization_failed")
                 end
             end
+            endcase
 
             `uvm_info("SIMPLE_MODE_ALIGN_SEQ", "Writing to registers", UVM_MEDIUM)
             reg_block.sa.write(status, regi.sa_addr);
@@ -788,7 +790,7 @@ class simple_mode_4k_check_seq extends base_master_sequence;
                 if(!regi.randomize() with {
                     regi.btt_s           == MIN;
                     regi.sa_addr         == 'h2000;
-                    regi.da_addr         == 'h1fa0;
+                    regi.da_addr         == 'h1fa5;
                     regi.btt_bytes       == 'h100;
                     })begin
                     `uvm_error(get_full_name(), "randomization_failed")
@@ -914,3 +916,76 @@ class simple_mode_64mb_btt_seq extends base_master_sequence;
         reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_64mb_btt_seq
+
+
+class simple_mode_wr_rd_hw_reset_seq extends base_master_sequence;
+    `uvm_object_utils(simple_mode_wr_rd_hw_reset_seq)
+  
+    function new(string name = "simple_mode_wr_rd_hw_reset_seq");
+        super.new(name); 
+    endfunction
+    
+    task body();
+        super.body();
+
+        `uvm_info("SIMPLE_MODE_INCR_SEQ", "Starting Simple Mode INCR Transfer Sequence", UVM_MEDIUM)
+        
+        if(!regi.randomize() with {
+            regi.btt_s == MED;
+            regi.sa_addr %16 == 0;
+            regi.da_addr %16 == 0;
+            regi.btt_bytes %16 == 0;
+            })begin
+            `uvm_error(get_full_name(), "randomization_failed")
+        end
+
+        do begin
+            reg_block.cdmasr.read(status, cdmasr_data);
+	    end while(cdmasr_data[1] == 0);
+        `uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Idle = %0h - wait clear",cdmasr_data[1]), UVM_MEDIUM)
+
+        `uvm_info("SIMPLE_MODE_INCR_SEQ", "Writing to registers", UVM_MEDIUM)
+        reg_block.cdmacr.write(status, 32'h15000);
+
+        reg_block.sa.write(status, regi.sa_addr);
+        reg_block.da.write(status, regi.da_addr);
+        reg_block.btt.write(status, regi.btt_bytes);
+        `uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Configured Registers: \nSA: %0d \nDA: %0d \nBTT: %0d \nTransfer started!",regi.sa_addr,regi.da_addr,regi.btt_bytes), UVM_MEDIUM)
+        `uvm_info("SIMPLE_MODE_INCR_SEQ", "BTT written - Seq starts", UVM_MEDIUM)
+
+        repeat(16)@(posedge obj.mas_if[0].aclk);
+
+        `uvm_info("RAL_RESET_TEST","Soft reset asserted",UVM_MEDIUM)
+        reg_block.cdmacr.Reset.write(status,1'b1);
+        do begin
+            reg_block.cdmacr.Reset.read(status,cdmacr_data);
+        end while(cdmacr_data == 1);
+        `uvm_info("RAL_RESET_TEST","Soft reset cleared",UVM_MEDIUM)
+        //clears RAL mirror values
+        reg_block.reset();
+        `uvm_info("RAL_RESET_TEST","RAL model reset completed",UVM_MEDIUM)
+
+        if(!regi.randomize() with {
+            regi.btt_s == MED;
+            })begin
+            `uvm_error(get_full_name(), "randomization_failed")
+        end
+
+        do begin
+            reg_block.cdmasr.read(status, cdmasr_data);
+	    end while(cdmasr_data[1] == 0);
+        `uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Idle = %0h - wait clear",cdmasr_data[1]), UVM_MEDIUM)
+
+        `uvm_info("SIMPLE_MODE_INCR_SEQ", "Writing to registers", UVM_MEDIUM)
+        reg_block.cdmacr.write(status, 32'h15000);
+
+        reg_block.sa.write(status, regi.sa_addr);
+        reg_block.da.write(status, regi.da_addr);
+        reg_block.btt.write(status, regi.btt_bytes);
+        `uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Configured Registers: \nSA: %0d \nDA: %0d \nBTT: %0d \nTransfer started!",regi.sa_addr,regi.da_addr,regi.btt_bytes), UVM_MEDIUM)
+        `uvm_info("SIMPLE_MODE_INCR_SEQ", "BTT written - Seq starts", UVM_MEDIUM)
+
+        reg_block.cdmasr.read(status, cdmasr_data);
+        `uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Idle = %0h - Waiting for idle",cdmasr_data[1]), UVM_MEDIUM)
+    endtask
+endclass: simple_mode_wr_rd_hw_reset_seq

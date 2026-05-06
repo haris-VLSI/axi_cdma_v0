@@ -111,24 +111,28 @@ class cdma_chk extends uvm_component;
         end
     endtask: get_config_data
     
-    // --- dispatcher ---
     task start_prediction(cdma_cfg_t cfg);
         if (cfg.btt_cfg == 0) begin
             predict_internal_error();
+            //Stops the predictor before it does further calculations
             return;
         end
 
         fork
             // MM2S (Read) Dispatcher
             begin
-                if (cfg.rd_burst == FIXED) predict_keyhole_read(cfg);
-                else                       predict_incr_read(cfg);
+                if (cfg.rd_burst == FIXED)
+                    predict_keyhole_read(cfg);
+                else                       
+                    predict_incr_read(cfg);
             end
 
             // S2MM (Write) Dispatcher
             begin
-                if (cfg.wr_burst == FIXED) predict_keyhole_write(cfg);
-                else                       predict_incr_write(cfg);
+                if (cfg.wr_burst == FIXED) 
+                    predict_keyhole_write(cfg);
+                else
+                    predict_incr_write(cfg);
             end
         join
 

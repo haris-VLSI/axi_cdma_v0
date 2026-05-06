@@ -3,9 +3,9 @@ parameter int AXI_DATA_WIDTH = 128;
 
 typedef struct {
     bit [31:0] cr_cfg;
-    bit [63:0] sa_cfg;  // 64-bit Source Address
-    bit [63:0] da_cfg;  // 64-bit Destination Address
-    bit [25:0] btt_cfg; // 26-bit Bytes to Transfer
+    bit [63:0] sa_cfg;
+    bit [63:0] da_cfg;
+    bit [25:0] btt_cfg;
     bit [1:0]  rd_burst;
     bit [1:0]  wr_burst;
 } cdma_cfg_t;
@@ -14,8 +14,8 @@ class cdma_chk extends uvm_component;
     `uvm_component_utils(cdma_chk)
 
     uvm_tlm_analysis_fifo #(master_seq_item) master_af;
-    uvm_tlm_analysis_fifo #(slave_seq_item)  rd_slave_af;
-    uvm_tlm_analysis_fifo #(slave_seq_item)  wr_slave_af;
+    uvm_tlm_analysis_fifo #(slave_seq_item) rd_slave_af;
+    uvm_tlm_analysis_fifo #(slave_seq_item) wr_slave_af;
 
     virtual reset_intf reset_if;
     cdma_reg_block  reg_block;
@@ -64,7 +64,6 @@ class cdma_chk extends uvm_component;
         end
     endfunction
 
-// --- Configuration Monitoring with Diagnostic Prints ---
     task get_config_data();
         master_seq_item cfg_pkt;
         cdma_cfg_t      cfg_tx;
@@ -78,11 +77,6 @@ class cdma_chk extends uvm_component;
 
                 cfg_tx.cr_cfg = reg_block.cdmacr.get_mirrored_value();
 
-                `uvm_info("BIT_WATCH", $sformatf("Raw CDMACR: 0x%0h", cfg_tx.cr_cfg), UVM_LOW)
-                `uvm_info("BIT_WATCH", $sformatf("Bit [4] Keyhole Read : %b", cfg_tx.cr_cfg[4]), UVM_LOW)
-                `uvm_info("BIT_WATCH", $sformatf("Bit [5] Keyhole Write : %b", cfg_tx.cr_cfg[5]), UVM_LOW)
-                
-                // Temporarily assign based on your current mapping to see the impact
                 cfg_tx.rd_burst = cfg_tx.cr_cfg[4] ? FIXED : INCR;
                 cfg_tx.wr_burst = cfg_tx.cr_cfg[5] ? FIXED : INCR;
 
@@ -99,7 +93,7 @@ class cdma_chk extends uvm_component;
                 cfg_tx.sa_cfg  = {sa_msb, sa_lsb};
                 cfg_tx.da_cfg  = {da_msb, da_lsb};
 
-                `uvm_info("CFG_DIAG", $sformatf("SA: 0x%0h | DA: 0x%0h | BTT: %0d", cfg_tx.sa_cfg, cfg_tx.da_cfg, cfg_tx.btt_cfg), UVM_LOW)
+                `uvm_info("CFG_DIAG", $sformatf("SA: %0h | DA: %0h | BTT: %0d", cfg_tx.sa_cfg, cfg_tx.da_cfg, cfg_tx.btt_cfg), UVM_LOW)
 
                 cfg_tx_q.push_back(cfg_tx);
                 start_prediction(cfg_tx);
@@ -117,14 +111,18 @@ class cdma_chk extends uvm_component;
         fork
             // MM2S (Read) Dispatcher
             begin
-                if (cfg.rd_burst == FIXED) predict_keyhole_read(cfg);
-                else                       predict_incr_read(cfg);
+                if (cfg.rd_burst == FIXED)
+                    predict_keyhole_read(cfg);
+                else
+                    predict_incr_read(cfg);
             end
 
             // S2MM (Write) Dispatcher
             begin
-                if (cfg.wr_burst == FIXED) predict_keyhole_write(cfg);
-                else                       predict_incr_write(cfg);
+                if (cfg.wr_burst == FIXED)
+                    predict_keyhole_write(cfg);
+                else
+                    predict_incr_write(cfg);
             end
         join
 
@@ -164,15 +162,15 @@ class cdma_chk extends uvm_component;
         while (rem_btt > 0) begin
             // Track the 4KB boundary using the incrementing virtual address
             int split = calculate_4k_partition(virt_addr, rem_btt);
-            
+
             // KEY: Use bus_addr for the 1st burst, realigned base for the rest
             math_addr = (is_first) ? bus_addr : (bus_addr & ~(BUS_BYTES-1)); 
-            
-            `uvm_info("KEYHOLE_RD", $sformatf("Fixed BusAddr: 0x%0h | MathAddr: 0x%0h | Split: %0d", 
+
+            `uvm_info("KEYHOLE_RD", $sformatf("Fixed BusAddr: %0h | MathAddr: %0h | Split: %0d", 
                       bus_addr, math_addr, split), UVM_MEDIUM)
-            
+
             predict_read_bus(bus_addr, split, math_addr);
-            
+
             virt_addr   = virt_addr + split;
             rem_btt     = rem_btt - split;
             is_first    = 1'b0;
@@ -191,14 +189,14 @@ class cdma_chk extends uvm_component;
             
             math_addr = (is_first) ? bus_addr : (bus_addr & ~(BUS_BYTES-1)); 
             
-            `uvm_info("KEYHOLE_WR", $sformatf("Fixed BusAddr: 0x%0h | MathAddr: 0x%0h | Split: %0d", 
+            `uvm_info("KEYHOLE_WR", $sformatf("Fixed BusAddr: %0h | MathAddr: %0h | Split: %0d", 
                       bus_addr, math_addr, split), UVM_MEDIUM)
             
             predict_write_bus(bus_addr, split, math_addr);
             
             virt_addr   = virt_addr + split;
             rem_btt     = rem_btt - split;
-            is_first   = 1'b0;
+            is_first    = 1'b0;
         end
     endtask
 
@@ -238,7 +236,7 @@ class cdma_chk extends uvm_component;
         
         rd_slave_af.get(act_rd);
         
-        `uvm_info("RD_CHECK", $sformatf("Read Tracking: BusAddr=0x%0h | MathAddr=0x%0h | ExpLen=%0d", 
+        `uvm_info("RD_CHECK", $sformatf("Read Tracking: BusAddr=%0h | MathAddr=%0h | ExpLen=%0d", 
                   addr, target_len_addr, exp_len), UVM_HIGH)
         
         // Physical Address Check
@@ -265,7 +263,7 @@ class cdma_chk extends uvm_component;
     task predict_write_bus(bit [63:0] addr, int bytes, bit [63:0] math_addr = 0);
         slave_seq_item act_wr;
         bit [63:0] target_len_addr = (math_addr == 0) ? addr : math_addr;
-        
+
         bit [2:0] exp_size = predict_size();
         bit [7:0] exp_len  = predict_length(target_len_addr, bytes);
         bit [STRB_WIDTH-1:0] exp_wstrb; 
@@ -273,7 +271,7 @@ class cdma_chk extends uvm_component;
 
         wr_slave_af.get(act_wr);
 
-        `uvm_info("WR_CHECK", $sformatf("Write Tracking: BusAddr=0x%0h | MathAddr=0x%0h | ExpLen=%0d", 
+        `uvm_info("WR_CHECK", $sformatf("Write Tracking: BusAddr=%0h | MathAddr=%0h | ExpLen=%0d", 
                   addr, target_len_addr, exp_len), UVM_HIGH)
 
         if (act_wr.awaddr !== addr)    `uvm_error("AW_MISMATCH", $sformatf("Exp AWADDR: %h, Act: %h", addr, act_wr.awaddr))
@@ -282,7 +280,7 @@ class cdma_chk extends uvm_component;
         for (int beat = 0; beat <= exp_len; beat++) begin
             // predict_wstrb MUST use target_len_addr to correctly mask realigned lanes
             exp_wstrb = predict_wstrb(target_len_addr, beat, exp_len, bytes);
-            
+
             if (act_wr.wstrobe[beat] !== exp_wstrb)
                 `uvm_error("WSTRB_MISMATCH", $sformatf("Beat %0d | Exp: %b, Act: %b", beat, exp_wstrb, act_wr.wstrobe[beat]))
             else
@@ -332,7 +330,7 @@ class cdma_chk extends uvm_component;
         err_status[4] = 1'b1; // DMAIntErr[cite: 1]
         err_status[1] = 1'b1; // Idle[cite: 1]
         void'(reg_block.cdmasr.predict(err_status));
-        `uvm_info("STATUS_UPD", $sformatf("BTT=0 detected. Mirrored CDMASR: 0x%h", err_status), UVM_LOW)
+        `uvm_info("STATUS_UPD", $sformatf("BTT=0 detected. Mirrored CDMASR: %h", err_status), UVM_LOW)
     endtask
 
 // Task to predict status register updates and interrupt pin assertion
@@ -366,7 +364,7 @@ class cdma_chk extends uvm_component;
         void'(reg_block.cdmasr.predict(next_sr));
 
         // 4. Log the prediction
-        `uvm_info("INT_PRED", $sformatf("Status predicted: 0x%h | cdma_introut predicted: %b", next_sr, expect_introut), UVM_LOW)
+        `uvm_info("INT_PRED", $sformatf("Status predicted: %h | cdma_introut predicted: %b", next_sr, expect_introut), UVM_LOW)
         // Wait for a maximum amount of time for the interrupt to hit
         if (expect_introut) begin
             fork
@@ -425,7 +423,7 @@ class cdma_chk extends uvm_component;
         // AXI Responses: 00=OKAY, 01=EXOKAY, 10=SLVERR, 11=DECERR
         case (act_wr.bresp)
             2'b00, 2'b01: begin
-                `uvm_info("WR_RESP", $sformatf("Write Transaction OKAY (0x%h)", act_wr.bresp), UVM_LOW)
+                `uvm_info("WR_RESP", $sformatf("Write Transaction OKAY (%h)", act_wr.bresp), UVM_LOW)
             end
             
             2'b10: begin // SLVERR
@@ -439,7 +437,7 @@ class cdma_chk extends uvm_component;
             end
             
             default: begin
-                `uvm_error("WR_RESP_ERR", $sformatf("Unknown AXI Response received: 0x%h", act_wr.bresp))
+                `uvm_error("WR_RESP_ERR", $sformatf("Unknown AXI Response received: %h", act_wr.bresp))
             end
         endcase
     endtask
@@ -462,7 +460,7 @@ class cdma_chk extends uvm_component;
             end
             
             default: begin
-                `uvm_error("RD_RESP_ERR", $sformatf("Unknown RRESP on Beat %0d: 0x%h", beat_idx, rresp))
+                `uvm_error("RD_RESP_ERR", $sformatf("Unknown RRESP on Beat %0d: %h", beat_idx, rresp))
             end
         endcase
     endtask
@@ -481,6 +479,6 @@ class cdma_chk extends uvm_component;
         err_status[1] = 1'b1; 
         
         void'(reg_block.cdmasr.predict(err_status));
-        `uvm_info("STATUS_UPD", $sformatf("Predicted CDMASR update for Bit %0d: 0x%h", bit_idx, err_status), UVM_LOW)
+        `uvm_info("STATUS_UPD", $sformatf("Predicted CDMASR update for Bit %0d: %h", bit_idx, err_status), UVM_LOW)
     endtask
 endclass: cdma_chk

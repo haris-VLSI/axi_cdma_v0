@@ -163,7 +163,7 @@ class ral_intermediate_soft_reset_test extends cdma_base_test;
 
             //clears RAL mirror values
             env.reg_block.reset();
-            `uvm_info("RAL_RESET_TEST","RAL reset completed",UVM_MEDIUM)
+            `uvm_info("RAL_RESET_TEST","RAL model reset completed",UVM_MEDIUM)
 
             `uvm_info("RAL_RESET_TEST","RAL reset test starting",UVM_MEDIUM)
             reset_seq.start(null);
@@ -486,9 +486,9 @@ class simple_dma_int_error_test extends cdma_base_test;
 endclass:simple_dma_int_error_test
 
 
-class simple_dma_4k_boundary_test extends cdma_base_test;
-    `uvm_component_utils(simple_dma_4k_boundary_test)
-    function new(string name="simple_dma_4k_boundary_test", uvm_component parent);
+class simple_mode_4k_boundary_test extends cdma_base_test;
+    `uvm_component_utils(simple_mode_4k_boundary_test)
+    function new(string name="simple_mode_4k_boundary_test", uvm_component parent);
         super.new(name,parent);
     endfunction
 
@@ -514,7 +514,7 @@ class simple_dma_4k_boundary_test extends cdma_base_test;
             phase.phase_done.set_drain_time(this, 1000ns);
         phase.drop_objection(this);
     endtask
-endclass:simple_dma_4k_boundary_test
+endclass:simple_mode_4k_boundary_test
 
 
 class simple_mode_alignment_test extends cdma_base_test;
@@ -524,7 +524,7 @@ class simple_mode_alignment_test extends cdma_base_test;
         super.new(name,parent);
     endfunction
 
-    simple_mode_alignment_seq         master_seq;
+    simple_mode_alignment_seq       master_seq;
     base_slave_sequence             slave_seq;
     simple_mode_interrupt_check     interrupt_seq;
     
@@ -612,3 +612,34 @@ endclass: simple_mode_4k_check_test
 `TEST(simple_mode_b2b_test,simple_mode_b2b_seq,base_slave_sequence)
 `TEST(simple_mode_b2b_ioc_test,simple_mode_b2b_ioc_seq,base_slave_sequence)
 `TEST(simple_mode_64mb_btt_test,simple_mode_64mb_btt_seq,base_slave_sequence)
+`TEST_INT(simple_mode_wr_rd_hw_reset_test,simple_mode_wr_rd_hw_reset_seq,base_slave_sequence,simple_mode_interrupt_check)
+
+//class simple_mode_wr_rd_hw_reset_test extends cdma_base_test;
+//    `uvm_component_utils(simple_mode_wr_rd_hw_reset_test)
+//    
+//    function new(string name="simple_mode_wr_rd_hw_reset_test", uvm_component parent);
+//        super.new(name,parent);
+//    endfunction
+//
+//    simple_mode_wr_rd_hw_reset_seq  master_seq;
+//    base_slave_sequence             slave_seq;
+//    simple_mode_interrupt_check     interrupt_seq;
+//    
+//    task main_phase(uvm_phase phase);
+//        phase.raise_objection(this);
+//            master_seq = simple_mode_wr_rd_hw_reset_seq::type_id::create("master_seq");
+//            slave_seq  = base_slave_sequence::type_id::create("slave_seq");
+//            interrupt_seq = simple_mode_interrupt_check::type_id::create("interrupt_seq");
+//
+//            master_seq.reg_block = env.reg_block;
+//            interrupt_seq.reg_block = env.reg_block;
+//            fork
+//                slave_seq.start(env.s_agt[0].sqr);
+//            join_none
+//            fork
+//                master_seq.start(env.m_agt[0].sqr);
+//                interrupt_seq.start(env.m_agt[0].sqr);
+//            join
+//        phase.drop_objection(this);
+//    endtask
+//endclass: simple_mode_wr_rd_hw_reset_test

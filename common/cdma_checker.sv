@@ -1,4 +1,3 @@
-// User defined Parameter
 parameter int AXI_DATA_WIDTH = 128;
 
 typedef struct {
@@ -23,7 +22,6 @@ class cdma_chk extends uvm_component;
     cdma_cfg_t      cfg_tx_q[$];
     byte            expected_data_q[$];
 
-    // Define local constants based on the parameter
     localparam BUS_BYTES = AXI_DATA_WIDTH/8;
     localparam STRB_WIDTH = BUS_BYTES;
 

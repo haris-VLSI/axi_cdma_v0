@@ -17,10 +17,10 @@ module top;
 
     parameter int FREQ = 200;
 
-    real    half_clk = 1000.00/(2*FREQ);
+    localparam real half_clk = 1000.00/(2*FREQ);
 
-   // Instantiate AXI Design
-   design_1_wrapper  dut (
+    // Instantiate AXI Design
+    design_1_wrapper  dut (
                        .m_axi_aclk_0(m_clk),
                        .s_axi_lite_aclk_0(m_clk),
                        .s_axi_lite_aresetn_0(reset_n),
@@ -161,9 +161,9 @@ module top;
     end
 
     initial begin
-        //run_test ("simple_mode_wr_rd_hw_reset_test");     //20 
+        run_test ("simple_mode_wr_rd_hw_reset_test");     //20 
         //run_test ("simple_mode_64mb_btt_test");           //19 to run
-        run_test ("simple_mode_b2b_ioc_test");            //18 working
+        //run_test ("simple_mode_b2b_ioc_test");            //18 working
         //run_test ("simple_mode_b2b_test");                //17 working
         //run_test ("simple_mode_4k_check_test");           //16 working
         //run_test ("simple_mode_btt_check_test");          //15 working
@@ -190,6 +190,7 @@ module top;
         $display("AT 156ns: m_clk is %b, interface aclk is %b", m_clk, m_axi_lite_if.aclk);
         #157;
         $display("AT 157ns: m_clk is %b, interface aclk is %b", m_clk, m_axi_lite_if.aclk);
+        $display("Clock_Period: %0.3f", (half_clk));
     end
 //    initial begin
 //        #100000;  //safety finish to avoid infinite

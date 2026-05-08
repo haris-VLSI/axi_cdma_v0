@@ -170,7 +170,8 @@ class simple_mode_interrupt_check extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", "Read Status Register Errs as 0. Clear is Success!", UVM_MEDIUM)
         end
-        reg_block.cdmacr.write(status, 32'h10004);
+        reg_block.cdmacr.Reset.write(status, 1'b1);
+        #10;
     endtask
 endclass: simple_mode_interrupt_check
 
@@ -477,7 +478,7 @@ class simple_mode_b2b_ioc_seq extends base_master_sequence;
         `uvm_info("SIMPLE_MODE_B2B_IOC_SEQ", "Starting Simple Mode INCR Transfer Sequence", UVM_MEDIUM)
 
         repeat(4)begin
-        regi = reg_seq_item::type_id::create("btt_pkt");
+            regi = reg_seq_item::type_id::create("btt_pkt");
             if(!regi.randomize() with {
                 regi.btt_s == MIN;
                 regi.sa_addr %16 == 0;
@@ -528,8 +529,8 @@ class simple_mode_b2b_ioc_seq extends base_master_sequence;
                     `uvm_error("SIMPLE_MODE_DMA_INT_SEQ", "IOC_Irq NOT Cleared!")
                 end
             end
+            reg_block.cdmacr.write(status, 32'h10004);
         end
-        reg_block.cdmacr.write(status, 32'h10004);
     endtask
 endclass: simple_mode_b2b_ioc_seq
 
@@ -953,7 +954,7 @@ class simple_mode_wr_rd_hw_reset_seq extends base_master_sequence;
         `uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Configured Registers: \nSA: %0d \nDA: %0d \nBTT: %0d \nTransfer started!",regi.sa_addr,regi.da_addr,regi.btt_bytes), UVM_MEDIUM)
         `uvm_info("SIMPLE_MODE_INCR_SEQ", "BTT written - Seq starts", UVM_MEDIUM)
 
-        repeat(16)@(posedge obj.mas_if[0].aclk);
+        repeat(15)@(posedge obj.mas_if[0].aclk);
 
         `uvm_info("RAL_RESET_TEST","Soft reset asserted",UVM_MEDIUM)
         reg_block.cdmacr.Reset.write(status,1'b1);

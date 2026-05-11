@@ -614,32 +614,34 @@ endclass: simple_mode_4k_check_test
 `TEST(simple_mode_64mb_btt_test,simple_mode_64mb_btt_seq,base_slave_sequence)
 `TEST_INT(simple_mode_wr_rd_hw_reset_test,simple_mode_wr_rd_hw_reset_seq,base_slave_sequence,simple_mode_interrupt_check)
 
-//class simple_mode_wr_rd_hw_reset_test extends cdma_base_test;
-//    `uvm_component_utils(simple_mode_wr_rd_hw_reset_test)
-//    
-//    function new(string name="simple_mode_wr_rd_hw_reset_test", uvm_component parent);
-//        super.new(name,parent);
-//    endfunction
-//
-//    simple_mode_wr_rd_hw_reset_seq  master_seq;
-//    base_slave_sequence             slave_seq;
-//    simple_mode_interrupt_check     interrupt_seq;
-//    
-//    task main_phase(uvm_phase phase);
-//        phase.raise_objection(this);
-//            master_seq = simple_mode_wr_rd_hw_reset_seq::type_id::create("master_seq");
-//            slave_seq  = base_slave_sequence::type_id::create("slave_seq");
-//            interrupt_seq = simple_mode_interrupt_check::type_id::create("interrupt_seq");
-//
-//            master_seq.reg_block = env.reg_block;
-//            interrupt_seq.reg_block = env.reg_block;
-//            fork
-//                slave_seq.start(env.s_agt[0].sqr);
-//            join_none
-//            fork
-//                master_seq.start(env.m_agt[0].sqr);
-//                interrupt_seq.start(env.m_agt[0].sqr);
-//            join
-//        phase.drop_objection(this);
-//    endtask
-//endclass: simple_mode_wr_rd_hw_reset_test
+/******************** SG-MODE *********************/
+
+class sg_mode_incr_test extends cdma_base_test;
+    `uvm_component_utils(sg_mode_incr_test)
+    
+    function new(string name="sg_mode_incr_test", uvm_component parent);
+        super.new(name,parent);
+    endfunction
+
+    sg_mode_incr_seq                master_seq;
+    base_slave_sequence             slave_seq;
+    simple_mode_interrupt_check     interrupt_seq;
+    
+    task main_phase(uvm_phase phase);
+        phase.raise_objection(this);
+            master_seq = sg_mode_incr_seq::type_id::create("master_seq");
+            slave_seq  = base_slave_sequence::type_id::create("slave_seq");
+            interrupt_seq = simple_mode_interrupt_check::type_id::create("interrupt_seq");
+
+            master_seq.reg_block = env.reg_block;
+            interrupt_seq.reg_block = env.reg_block;
+            fork
+                slave_seq.start(env.s_agt[0].sqr);
+            join_none
+            fork
+                master_seq.start(env.m_agt[0].sqr);
+                interrupt_seq.start(env.m_agt[0].sqr);
+            join
+        phase.drop_objection(this);
+    endtask
+endclass: sg_mode_incr_test

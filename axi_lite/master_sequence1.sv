@@ -990,3 +990,41 @@ class simple_mode_wr_rd_hw_reset_seq extends base_master_sequence;
         `uvm_info("SIMPLE_MODE_INCR_SEQ", $sformatf("Idle = %0h - Waiting for idle",cdmasr_data[1]), UVM_MEDIUM)
     endtask
 endclass: simple_mode_wr_rd_hw_reset_seq
+
+/******************** SG-MODE *********************/
+
+class sg_mode_incr_seq extends base_master_sequence;
+    `uvm_object_utils(sg_mode_incr_seq)
+  
+    function new(string name = "sg_mode_incr_seq");
+        super.new(name); 
+    endfunction
+    
+    task body();
+        super.body();
+
+        `uvm_info("SG_MODE_INCR_SEQ", "Starting SG Mode INCR Transfer Sequence", UVM_MEDIUM)
+        
+        if(!regi.randomize() with {
+            regi.btt_s == MIN;
+            regi.curdesc_pntr %64 == 0;
+            regi.taildesc_pntr %64 == 0;
+            })begin
+            `uvm_error(get_full_name(), "randomization_failed")
+        end
+        
+        do begin
+            reg_block.cdmasr.read(status, cdmasr_data);
+	    end while(cdmasr_data[1] == 0);
+        `uvm_info("SG_MODE_INCR_SEQ", $sformatf("Idle = %0h - wait clear",cdmasr_data[1]), UVM_MEDIUM)
+
+        `uvm_info("SG_MODE_INCR_SEQ", "Writing to registers", UVM_MEDIUM)
+        reg_block.cdmacr.write(status, 32'h15008);
+
+        reg_block.curdesc_pnt.write(status, regi.curdesc_pntr);
+        reg_block.taildesc_pnt.write(status, regi.taildesc_pntr);
+        reg_block.taildesc_pnt_msb.write(status, regi.taildesc_pntr_msb);
+        `uvm_info("SG_MODE_INCR_SEQ", $sformatf("Configured Registers: \nSA: %0d \nDA: %0d \nBTT: %0d \nTransfer started!",regi.curdesc_pntr,regi.taildesc_pntr,regi.taildesc_pntr_msb), UVM_MEDIUM)
+        `uvm_info("SG_MODE_INCR_SEQ", "Tail Desc MSB written - Seq starts", UVM_MEDIUM)
+    endtask
+endclass: sg_mode_incr_seq

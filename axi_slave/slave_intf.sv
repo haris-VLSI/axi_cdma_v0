@@ -1,6 +1,7 @@
 `include "uvm_macros.svh"
 //`include "package.sv"
   `define DATA_WIDTH     128
+  `define STRB_WIDTH     4
 interface slave_intf (input aclk, areset_n);
 //   import axi_package::*;
    import  uvm_pkg :: *;

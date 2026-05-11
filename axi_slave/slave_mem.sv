@@ -1,8 +1,6 @@
 class mem_module extends uvm_component;
     `uvm_component_utils(mem_module)
 
-    virtual slave_intf.DRV_MOD_slave        slave_drv_intf;
-
     function new (string name = "mem_module", uvm_component parent);
        super.new(name,parent);
     endfunction

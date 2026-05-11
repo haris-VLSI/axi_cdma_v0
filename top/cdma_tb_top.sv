@@ -161,9 +161,10 @@ module top;
     end
 
     initial begin
-        run_test ("simple_mode_wr_rd_hw_reset_test");     //20 
+        //run_test ("sg_mode_incr_test");                   //21
+        //run_test ("simple_mode_wr_rd_hw_reset_test");     //20 
         //run_test ("simple_mode_64mb_btt_test");           //19 to run
-        //run_test ("simple_mode_b2b_ioc_test");            //18 working
+        run_test ("simple_mode_b2b_ioc_test");            //18 working
         //run_test ("simple_mode_b2b_test");                //17 working
         //run_test ("simple_mode_4k_check_test");           //16 working
         //run_test ("simple_mode_btt_check_test");          //15 working

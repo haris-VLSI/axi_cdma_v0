@@ -12,7 +12,7 @@ class cdma_env extends uvm_env;
   cdma_chk              chk;
   cdma_sbd              sbd;
   cdma_cov              cov;
-  
+
   config_obj            obj;
 
   function new (string name = "cdma_env", uvm_component parent = null);

@@ -10,6 +10,7 @@ package axi_package;
  `include "../cdma_reg_ral/reg_seq_item.sv"
   `include "../cdma_reg_ral/cdma_reg_adapter.sv"
   `include "../cdma_reg_ral/cdma_reg_predictor.sv"
+ `include "../axi_slave/desc_mem.sv"
  `include "../axi_lite/master_sequencer.sv"
  `include "../axi_lite/master_sequence1.sv"
  //`include "../axi_lite/master_sequence.sv"

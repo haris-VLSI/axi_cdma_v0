@@ -99,7 +99,7 @@ class cdma_chk extends uvm_component;
         end
     endtask: get_config_data
     
-    // --- dispatcher ---
+    // Dispatcher
     task start_prediction(cdma_cfg_t cfg);
         if (cfg.btt_cfg == 0) begin
             predict_internal_error();
@@ -198,7 +198,7 @@ class cdma_chk extends uvm_component;
         end
     endtask
 
-    // DataMover ensures no burst crosses 4KB boundary[cite: 1]
+    // DataMover ensures no burst crosses 4KB boundary
     function int calculate_4k_partition(bit [63:0] addr, int rem_btt);
         int bytes_to_4k = 4096 - (addr % 4096);
         return (rem_btt < bytes_to_4k) ? rem_btt : bytes_to_4k;
@@ -310,10 +310,10 @@ class cdma_chk extends uvm_component;
         int start_offset = addr % BUS_BYTES;
         int end_offset   = (addr + total_bytes) % BUS_BYTES;
 
-        // Mask lower lanes for unaligned start[cite: 1]
+        // Mask lower lanes for unaligned start
         if (beat == 0) strobe = strobe << start_offset;
 
-        // Mask upper lanes for unaligned end[cite: 1]
+        // Mask upper lanes for unaligned end
         if (beat == total_len && end_offset != 0) begin
             strobe &= ({STRB_WIDTH{1'b1}} >> (BUS_BYTES - end_offset));
         end
@@ -325,8 +325,8 @@ class cdma_chk extends uvm_component;
         while (reg_block.cdmasr.is_busy())begin
             @(posedge obj.mas_if[0].aclk);
         end
-        err_status[4] = 1'b1; // DMAIntErr[cite: 1]
-        err_status[1] = 1'b1; // Idle[cite: 1]
+        err_status[4] = 1'b1; // DMAIntErr
+        err_status[1] = 1'b1; // Idle
         void'(reg_block.cdmasr.predict(err_status));
         `uvm_info("STATUS_UPD", $sformatf("BTT=0 detected. Mirrored CDMASR: %h", err_status), UVM_LOW)
     endtask
@@ -344,13 +344,13 @@ class cdma_chk extends uvm_component;
         next_sr[12] = 1'b1; // IOC_Irq: Interrupt on Complete
 
         // 2. Predict Interrupt Pin (cdma_introut)
-        // Signal drives High if (Event occurred AND Event enabled)[cite: 1]
-        if (current_cr[12] && next_sr[12]) begin // IOC_IrqEn & IOC_Irq[cite: 1]
+        // Signal drives High if (Event occurred AND Event enabled)
+        if (current_cr[12] && next_sr[12]) begin // IOC_IrqEn & IOC_Irq
             expect_introut = 1'b1;
         end
         
-        // Handling Error Interrupts[cite: 1]
-        if (current_cr[14] && next_sr[14]) begin // Err_IrqEn & Err_Irq[cite: 1]
+        // Handling Error Interrupts
+        if (current_cr[14] && next_sr[14]) begin // Err_IrqEn & Err_Irq
             expect_introut = 1'b1;
         end
 
@@ -358,7 +358,7 @@ class cdma_chk extends uvm_component;
             @(posedge obj.mas_if[0].aclk); 
         end
         
-        // 3. Update RAL Mirror[cite: 1]
+        // 3. Update RAL Mirror
         void'(reg_block.cdmasr.predict(next_sr));
 
         // 4. Log the prediction

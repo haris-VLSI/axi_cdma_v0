@@ -80,4 +80,10 @@ class reg_seq_item extends uvm_sequence_item;
         soft da_addr   % 16 == 0;
         soft btt_bytes % 16 == 0;
     }
+
+// SG Mode Constraints
+    constraint sg_pntr_align_ct {
+        curdesc_pntr[5:0]  == 6'b0;
+        taildesc_pntr[5:0] == 6'b0;
+    }
 endclass: reg_seq_item

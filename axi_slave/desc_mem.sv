@@ -2,14 +2,14 @@ class desc_mem extends uvm_object;
     
     logic [31:0] mem_m [*];
 
-    rand bit [31:0] CD;    
-    rand bit [31:0] ND;    
+    rand bit [31:0] CD;
+    rand bit [31:0] ND;
     rand bit [31:0] ND_MSB;
-    rand bit [31:0] SA;    
+    rand bit [31:0] SA;
     rand bit [31:0] SA_MSB;
-    rand bit [31:0] DA;    
+    rand bit [31:0] DA;
     rand bit [31:0] DA_MSB;
-    rand bit [25:0] BTT;   
+    rand bit [25:0] BTT;
     rand bit [31:0] STATUS;
 
     `uvm_object_utils_begin(desc_mem)
@@ -37,7 +37,7 @@ class desc_mem extends uvm_object;
         SA_MSB == 0;
         DA_MSB == 0;
     }
-    constraint c_btt_limits {
+    constraint c_btt {
         BTT inside {[1:1000]};
     }
     constraint c_data_alignment {

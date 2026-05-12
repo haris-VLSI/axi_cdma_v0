@@ -618,30 +618,33 @@ endclass: simple_mode_4k_check_test
 
 class sg_mode_incr_test extends cdma_base_test;
     `uvm_component_utils(sg_mode_incr_test)
-    
+
+    sg_mode_incr_seq        master_seq;  
+    sg_base_slave_sequence  sg_slave_seq;
+    desc_mem                m_desc;     
+
     function new(string name="sg_mode_incr_test", uvm_component parent);
         super.new(name,parent);
     endfunction
 
-    sg_mode_incr_seq                master_seq;
-    base_slave_sequence             slave_seq;
-    simple_mode_interrupt_check     interrupt_seq;
-    
     task main_phase(uvm_phase phase);
         phase.raise_objection(this);
-            master_seq = sg_mode_incr_seq::type_id::create("master_seq");
-            slave_seq  = base_slave_sequence::type_id::create("slave_seq");
-            interrupt_seq = simple_mode_interrupt_check::type_id::create("interrupt_seq");
 
-            master_seq.reg_block = env.reg_block;
-            interrupt_seq.reg_block = env.reg_block;
-            fork
-                slave_seq.start(env.s_agt[0].sqr);
-            join_none
-            fork
-                master_seq.start(env.m_agt[0].sqr);
-                interrupt_seq.start(env.m_agt[0].sqr);
-            join
+        master_seq   = sg_mode_incr_seq::type_id::create("master_seq");
+        sg_slave_seq = sg_base_slave_sequence::type_id::create("sg_slave_seq");
+        m_desc       = desc_mem::type_id::create("m_desc");
+
+        master_seq.reg_block    = env.reg_block;
+        //sg_slave_seq.mem_i      = m_desc;                
+
+        fork
+            sg_slave_seq.start(env.s_agt[0].sqr);
+        join_none
+        master_seq.start(env.m_agt[0].sqr);
+
+        wait(m_desc.mem_m[m_desc.CD + 'h1C][31] == 1);
+        `uvm_info("SG_TEST", "Transfer complete detected in memory status!", UVM_LOW)
+
         phase.drop_objection(this);
     endtask
 endclass: sg_mode_incr_test

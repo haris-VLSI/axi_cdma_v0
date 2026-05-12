@@ -161,10 +161,10 @@ module top;
     end
 
     initial begin
-        //run_test ("sg_mode_incr_test");                   //21
+        run_test ("sg_mode_incr_test");                   //21
         //run_test ("simple_mode_wr_rd_hw_reset_test");     //20 
         //run_test ("simple_mode_64mb_btt_test");           //19 to run
-        run_test ("simple_mode_b2b_ioc_test");            //18 working
+        //run_test ("simple_mode_b2b_ioc_test");            //18 working
         //run_test ("simple_mode_b2b_test");                //17 working
         //run_test ("simple_mode_4k_check_test");           //16 working
         //run_test ("simple_mode_btt_check_test");          //15 working
@@ -212,9 +212,9 @@ always@(posedge aclk)begin
      m_axi_lite_if.awregion  <=  0;
      m_axi_lite_if.awcache   <=  0;
 
-     m_axi_lite_if.wdata[127:32]  <=  'h0;
-     m_axi_lite_if.wstrobe[15:4]  <=  'h0;
-     m_axi_lite_if.wstrobe[3:0]   <=  'hf;
+     //m_axi_lite_if.wdata[127:32]  <=  'h0;
+     //m_axi_lite_if.wstrobe[15:4]  <=  'h0;
+     m_axi_lite_if.wstrobe   <=  'hf;
      m_axi_lite_if.mas_drv_cb.wlast     <=  0;
      m_axi_lite_if.arid      <=  0;
      m_axi_lite_if.araddr[63:6]    <=  'h0;

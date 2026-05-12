@@ -995,36 +995,35 @@ endclass: simple_mode_wr_rd_hw_reset_seq
 
 class sg_mode_incr_seq extends base_master_sequence;
     `uvm_object_utils(sg_mode_incr_seq)
-  
-    function new(string name = "sg_mode_incr_seq");
-        super.new(name); 
-    endfunction
-    
+
+    reg_seq_item reg_seq;
+    desc_mem mem_i;   
+
+    function new (string name = "sg_mode_incr_seq");
+        super.new(name);
+    endfunction 
+
     task body();
         super.body();
-
-        `uvm_info("SG_MODE_INCR_SEQ", "Starting SG Mode INCR Transfer Sequence", UVM_MEDIUM)
-        
-        if(!regi.randomize() with {
-            regi.btt_s == MIN;
-            regi.curdesc_pntr %64 == 0;
-            regi.taildesc_pntr %64 == 0;
-            })begin
-            `uvm_error(get_full_name(), "randomization_failed")
+        reg_seq = reg_seq_item::type_id::create("reg_seq");
+        mem_i = desc_mem::type_id::create("mem_i");
+        if(!reg_seq.randomize() with { 
+            curdesc_pntr  == 32'd64;
+            taildesc_pntr == 32'd128;
+        }) begin
+            `uvm_error("BODY", "Randomization failed")
         end
-        
+        mem_i.load_desc(reg_seq.curdesc_pntr);
+        uvm_config_db #(desc_mem)::set(null,"*","descriptor_mem",mem_i);
         do begin
             reg_block.cdmasr.read(status, cdmasr_data);
-	    end while(cdmasr_data[1] == 0);
-        `uvm_info("SG_MODE_INCR_SEQ", $sformatf("Idle = %0h - wait clear",cdmasr_data[1]), UVM_MEDIUM)
+        end while(cdmasr_data[1] == 0);
+        reg_block.cdmacr.write(status, 32'h0);
+        reg_block.cdmacr.write(status, 32'h00017008);
+        reg_block.curdesc_pnt.write(status, reg_seq.curdesc_pntr);
+        reg_block.taildesc_pnt.write(status, reg_seq.taildesc_pntr);
+        reg_block.taildesc_pnt_msb.write(status, 0);
 
-        `uvm_info("SG_MODE_INCR_SEQ", "Writing to registers", UVM_MEDIUM)
-        reg_block.cdmacr.write(status, 32'h15008);
-
-        reg_block.curdesc_pnt.write(status, regi.curdesc_pntr);
-        reg_block.taildesc_pnt.write(status, regi.taildesc_pntr);
-        reg_block.taildesc_pnt_msb.write(status, regi.taildesc_pntr_msb);
-        `uvm_info("SG_MODE_INCR_SEQ", $sformatf("Configured Registers: \nSA: %0d \nDA: %0d \nBTT: %0d \nTransfer started!",regi.curdesc_pntr,regi.taildesc_pntr,regi.taildesc_pntr_msb), UVM_MEDIUM)
-        `uvm_info("SG_MODE_INCR_SEQ", "Tail Desc MSB written - Seq starts", UVM_MEDIUM)
+        `uvm_info("SG_MASTER", "Tail Pointer Written. SG Engine Starts Fetching...", UVM_LOW)
     endtask
 endclass: sg_mode_incr_seq

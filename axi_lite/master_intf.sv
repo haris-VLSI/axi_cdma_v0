@@ -3,7 +3,7 @@
   //`define DATA_WIDTH     128
   `define DATA_WIDTH     32
   `define ADDR_WIDTH     64
-  `define STRB_WIDTH     16
+  `define STRB_WIDTH     4
   `define ID_WIDTH       0
   `define LEN_WIDTH      8
   `define SIZE_WIDTH     3

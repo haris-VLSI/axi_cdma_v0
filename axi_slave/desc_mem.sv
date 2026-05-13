@@ -24,30 +24,31 @@ class desc_mem extends uvm_object;
         `uvm_field_int(STATUS, UVM_ALL_ON)
     `uvm_object_utils_end
 
-    function new(string name="slave_memory_seq");
+    function new(string name="desc_mem");
         super.new(name);
     endfunction
 
-    constraint c_desc_alignment {
-        CD[5:0] == 0; 
-        ND[6:0] == 0; 
+    constraint c_desc_align {
+        //CD[5:0] == 0; 
+        //ND[6:0] == 0; 
     }
     constraint c_msb_init {
-        ND_MSB == 0;
-        SA_MSB == 0;
-        DA_MSB == 0;
+        //ND_MSB == 0;
+        //SA_MSB == 0;
+        //DA_MSB == 0;
     }
     constraint c_btt {
-        BTT inside {[1:1000]};
+        //soft BTT inside {[1:1000]};
     }
-    constraint c_data_alignment {
-        SA % 16 == 0;
-        DA % 16 == 0;
+    constraint c_data_align {
+        //soft SA % 16 == 0;
+        //soft DA % 16 == 0;
     }
     constraint c_overlap {
-        (SA > DA) ? (SA - DA >= BTT) : (DA - SA >= BTT);
+        //(SA > DA) ? (SA - DA >= BTT) : (DA - SA >= BTT);
+        //soft ((DA + BTT) < SA) || ((SA + BTT) < DA);
     }
-    constraint c_status_init {
+    constraint c_status{
         STATUS == 0;
     }
 

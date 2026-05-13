@@ -52,16 +52,19 @@ badd +0 ../riviera/compile.log
 badd +11 ../riviera/simulate.do
 badd +4 axi_slave/slave_intf.sv
 badd +15 axi_lite/master_intf.sv
-badd +148 ../riviera/srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v
+badd +127 ../riviera/srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v
 badd +208 axi_slave/slave_sequence.sv
 badd +409 ../riviera/test_logs/simple_dma_int_error_test.log
-badd +0 top/package.sv
+badd +35 top/package.sv
 badd +4 axi_slave/slave_mem.sv
 badd +0 axi_slave/desc_mem.sv
 badd +55 ../riviera/compile.do
 badd +1 axi_slave/slave_memory_seq.sv
 badd +34 axi_slave/slave_agent.sv
-badd +0 top/cdma_env.sv
+badd +39 top/cdma_env.sv
+badd +226 common/cdma_chk.sv
+badd +9 common/config_obj.sv
+badd +49 common/axi_base_sequence_item.sv
 argglobal
 silent! argdel *
 set stal=2
@@ -78,9 +81,9 @@ set nosplitbelow
 set nosplitright
 wincmd t
 set winminheight=1 winheight=1 winminwidth=1 winwidth=1
-exe 'vert 1resize ' . ((&columns * 1 + 51) / 103)
-exe 'vert 2resize ' . ((&columns * 1 + 51) / 103)
-exe 'vert 3resize ' . ((&columns * 97 + 51) / 103)
+exe 'vert 1resize ' . ((&columns * 1 + 50) / 101)
+exe 'vert 2resize ' . ((&columns * 1 + 50) / 101)
+exe 'vert 3resize ' . ((&columns * 97 + 50) / 101)
 argglobal
 setlocal keymap=
 setlocal noarabic
@@ -327,12 +330,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 85 - ((0 * winheight(0) + 10) / 21)
+let s:l = 75 - ((0 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-85
-normal! 022|
+75
+normal! 037|
 wincmd w
 argglobal
 if bufexists('axi_slave/desc_mem.sv') | buffer axi_slave/desc_mem.sv | else | edit axi_slave/desc_mem.sv | endif
@@ -454,16 +457,16 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 46 - ((0 * winheight(0) + 10) / 21)
+let s:l = 21 - ((20 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-46
-normal! 05|
+21
+normal! 017|
 wincmd w
-exe 'vert 1resize ' . ((&columns * 1 + 51) / 103)
-exe 'vert 2resize ' . ((&columns * 1 + 51) / 103)
-exe 'vert 3resize ' . ((&columns * 97 + 51) / 103)
+exe 'vert 1resize ' . ((&columns * 1 + 50) / 101)
+exe 'vert 2resize ' . ((&columns * 1 + 50) / 101)
+exe 'vert 3resize ' . ((&columns * 97 + 50) / 101)
 tabedit axi_lite/master_sequence1.sv
 set splitbelow splitright
 set nosplitbelow
@@ -589,11 +592,11 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 1023 - ((0 * winheight(0) + 11) / 22)
+let s:l = 998 - ((11 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-1023
+998
 normal! 032|
 tabedit axi_slave/slave_sequence.sv
 set splitbelow splitright
@@ -720,12 +723,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 208 - ((10 * winheight(0) + 11) / 22)
+let s:l = 250 - ((10 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-208
-normal! 05|
+250
+normal! 011|
 tabedit top/cdma_base_test.sv
 set splitbelow splitright
 set nosplitbelow
@@ -851,12 +854,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 639 - ((12 * winheight(0) + 11) / 22)
+let s:l = 650 - ((21 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-639
-normal! 030|
+650
+normal! 09|
 tabedit top/cdma_tb_top.sv
 set splitbelow splitright
 set nosplitbelow
@@ -982,12 +985,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 164 - ((6 * winheight(0) + 11) / 22)
+let s:l = 181 - ((21 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-164
-normal! 08|
+181
+normal! 04|
 tabedit ../riviera/compile.log
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -998,8 +1001,8 @@ set nosplitbelow
 set nosplitright
 wincmd t
 set winminheight=1 winheight=1 winminwidth=1 winwidth=1
-exe 'vert 1resize ' . ((&columns * 1 + 51) / 103)
-exe 'vert 2resize ' . ((&columns * 99 + 51) / 103)
+exe 'vert 1resize ' . ((&columns * 1 + 50) / 101)
+exe 'vert 2resize ' . ((&columns * 99 + 50) / 101)
 argglobal
 setlocal keymap=
 setlocal noarabic
@@ -1119,12 +1122,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 11 - ((4 * winheight(0) + 10) / 21)
+let s:l = 12 - ((0 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-11
-normal! 0100|
+12
+normal! 0
 wincmd w
 argglobal
 if bufexists('../riviera/sim_txt.log') | buffer ../riviera/sim_txt.log | else | edit ../riviera/sim_txt.log | endif
@@ -1246,147 +1249,17 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 1563 - ((19 * winheight(0) + 10) / 21)
+let s:l = 2774 - ((12 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-1563
-normal! 0
+2774
+normal! 012|
 wincmd w
-exe 'vert 1resize ' . ((&columns * 1 + 51) / 103)
-exe 'vert 2resize ' . ((&columns * 99 + 51) / 103)
-tabedit top/package.sv
-set splitbelow splitright
-set nosplitbelow
-set nosplitright
-wincmd t
-set winminheight=1 winheight=1 winminwidth=1 winwidth=1
-argglobal
-setlocal keymap=
-setlocal noarabic
-setlocal autoindent
-setlocal backupcopy=
-setlocal balloonexpr=
-setlocal nobinary
-setlocal nobreakindent
-setlocal breakindentopt=
-setlocal bufhidden=
-setlocal buflisted
-setlocal buftype=
-setlocal nocindent
-setlocal cinkeys=0{,0},0),:,0#,!^F,o,O,e
-setlocal cinoptions=
-setlocal cinwords=if,else,while,do,for,switch
-setlocal colorcolumn=
-setlocal comments=sO:*\ -,mO:*\ \ ,exO:*/,s1:/*,mb:*,ex:*/,://
-setlocal commentstring=/*%s*/
-setlocal complete=.,w,b,u,t,i
-setlocal concealcursor=
-setlocal conceallevel=0
-setlocal completefunc=
-setlocal nocopyindent
-setlocal cryptmethod=
-setlocal nocursorbind
-setlocal nocursorcolumn
-setlocal nocursorline
-setlocal define=
-setlocal dictionary=
-setlocal nodiff
-setlocal equalprg=
-setlocal errorformat=
-setlocal expandtab
-if &filetype != 'systemverilog'
-setlocal filetype=systemverilog
-endif
-setlocal fixendofline
-setlocal foldcolumn=0
-setlocal foldenable
-setlocal foldexpr=0
-setlocal foldignore=#
-setlocal foldlevel=0
-setlocal foldmarker={{{,}}}
-setlocal foldmethod=manual
-setlocal foldminlines=1
-setlocal foldnestmax=20
-setlocal foldtext=foldtext()
-setlocal formatexpr=
-setlocal formatoptions=croqlm1
-setlocal formatlistpat=^\\s*\\d\\+[\\]:.)}\\t\ ]\\s*
-setlocal formatprg=
-setlocal grepprg=
-setlocal iminsert=0
-setlocal imsearch=-1
-setlocal include=
-setlocal includeexpr=
-setlocal indentexpr=
-setlocal indentkeys=0{,0},:,0#,!^F,o,O,e
-setlocal noinfercase
-setlocal iskeyword=@,48-57,63,_,192-255
-setlocal keywordprg=
-setlocal nolinebreak
-setlocal nolisp
-setlocal lispwords=
-setlocal nolist
-setlocal makeencoding=
-setlocal makeprg=
-setlocal matchpairs=(:),{:},[:]
-setlocal modeline
-setlocal modifiable
-setlocal nrformats=bin,octal,hex
-set number
-setlocal number
-setlocal numberwidth=4
-setlocal omnifunc=
-setlocal path=
-setlocal nopreserveindent
-setlocal nopreviewwindow
-setlocal quoteescape=\\
-setlocal noreadonly
-setlocal norelativenumber
-setlocal norightleft
-setlocal rightleftcmd=search
-setlocal noscrollbind
-setlocal shiftwidth=4
-setlocal noshortname
-setlocal signcolumn=auto
-setlocal smartindent
-setlocal softtabstop=4
-setlocal nospell
-setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
-setlocal spellfile=
-setlocal spelllang=en
-setlocal statusline=
-setlocal suffixesadd=
-setlocal swapfile
-setlocal synmaxcol=3000
-if &syntax != 'systemverilog'
-setlocal syntax=systemverilog
-endif
-setlocal tabstop=4
-setlocal tagcase=
-setlocal tags=
-setlocal terminalscroll=10000
-setlocal termkey=
-setlocal termsize=
-setlocal termwinkey=
-setlocal termwinscroll=10000
-setlocal termwinsize=
-setlocal textwidth=78
-setlocal thesaurus=
-setlocal noundofile
-setlocal undolevels=-123456
-setlocal nowinfixheight
-setlocal nowinfixwidth
-setlocal wrap
-setlocal wrapmargin=0
-silent! normal! zE
-let s:l = 11 - ((7 * winheight(0) + 11) / 22)
-if s:l < 1 | let s:l = 1 | endif
-exe s:l
-normal! zt
-11
-normal! 02|
-tabnext 4
+2wincmd w
+exe 'vert 1resize ' . ((&columns * 1 + 50) / 101)
+exe 'vert 2resize ' . ((&columns * 99 + 50) / 101)
+tabnext 6
 set stal=1
 if exists('s:wipebuf') && s:wipebuf != bufnr('%')
   silent exe 'bwipe ' . s:wipebuf

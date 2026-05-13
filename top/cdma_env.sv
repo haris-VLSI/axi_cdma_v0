@@ -14,6 +14,7 @@ class cdma_env extends uvm_env;
   cdma_cov              cov;
 
   config_obj            obj;
+  //desc_mem              mem_i;
 
   function new (string name = "cdma_env", uvm_component parent = null);
     super.new(name, parent);
@@ -34,6 +35,9 @@ class cdma_env extends uvm_env;
 
     if(!uvm_config_db #(config_obj)::get(this,"","config_obj",obj))
       `uvm_fatal(get_full_name(),"Config_obj get Failure");
+
+    //mem_i = desc_mem::type_id::create("mem_i", this);
+    //uvm_config_db #(desc_mem)::set(this,"*","descriptor_mem",mem_i);
 
     m_agt = new[obj.no_of_masters];
     s_agt = new[obj.no_of_slaves];

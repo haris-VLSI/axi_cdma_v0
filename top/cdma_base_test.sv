@@ -619,8 +619,11 @@ endclass: simple_mode_4k_check_test
 class sg_mode_incr_test extends cdma_base_test;
     `uvm_component_utils(sg_mode_incr_test)
 
+    uvm_reg_data_t cdmasr_data;
+    uvm_status_e status;
     sg_mode_incr_seq        master_seq;  
     sg_base_slave_sequence  sg_slave_seq;
+    base_slave_sequence     slave_seq;
     desc_mem                m_desc;     
 
     function new(string name="sg_mode_incr_test", uvm_component parent);
@@ -632,19 +635,22 @@ class sg_mode_incr_test extends cdma_base_test;
 
         master_seq   = sg_mode_incr_seq::type_id::create("master_seq");
         sg_slave_seq = sg_base_slave_sequence::type_id::create("sg_slave_seq");
+        slave_seq    = base_slave_sequence::type_id::create("slave_seq");
         m_desc       = desc_mem::type_id::create("m_desc");
 
         master_seq.reg_block    = env.reg_block;
-        //sg_slave_seq.mem_i      = m_desc;                
 
         fork
-            sg_slave_seq.start(env.s_agt[0].sqr);
+        // running with SG agent
+            sg_slave_seq.start(env.s_agt[1].sqr);
+            slave_seq.start(env.s_agt[0].sqr);
         join_none
         master_seq.start(env.m_agt[0].sqr);
 
-        wait(m_desc.mem_m[m_desc.CD + 'h1C][31] == 1);
-        `uvm_info("SG_TEST", "Transfer complete detected in memory status!", UVM_LOW)
+        //wait(m_desc.mem_m[m_desc.CD + 'h1C][31] == 1);
+        //`uvm_info("SG_TEST", "Transfer complete detected in memory status!", UVM_LOW)
 
+        env.reg_block.cdmasr.read(status, cdmasr_data);
         phase.drop_objection(this);
     endtask
 endclass: sg_mode_incr_test

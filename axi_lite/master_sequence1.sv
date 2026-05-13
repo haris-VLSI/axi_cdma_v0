@@ -7,7 +7,7 @@ class base_master_sequence extends uvm_sequence #(reg_seq_item);
   uvm_reg_data_t        cdmasr_data;
   uvm_reg_data_t        cdmacr_data;
   uvm_reg_data_t        temp_data;
-  reg_seq_item          regi;
+  reg_seq_item          regi,reg_seq;
   config_obj            obj;
 
   function new (string name = "base_master_sequence");
@@ -359,6 +359,10 @@ class simple_dma_int_error_seq extends base_master_sequence;
         reg_block.da.write(status,regi.da_addr);
         //reg_block.da_msb.write(status,regi.da_addr);
         reg_block.btt.write(status,regi.btt_bytes);
+
+        reg_block.sa.read(status,cdmasr_data);
+        reg_block.da.read(status,cdmasr_data);
+        reg_block.btt.read(status,cdmasr_data);
         `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", $sformatf("Configured Registers: \nSA: %0d \nDA: %0d \nBTT: %0d \nTransfer started!",regi.sa_addr,regi.da_addr,regi.btt_bytes), UVM_MEDIUM)
 
         `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", $sformatf("cdma_introut: %0h", obj.mas_if[0].cdma_introut), UVM_MEDIUM)
@@ -996,8 +1000,7 @@ endclass: simple_mode_wr_rd_hw_reset_seq
 class sg_mode_incr_seq extends base_master_sequence;
     `uvm_object_utils(sg_mode_incr_seq)
 
-    reg_seq_item reg_seq;
-    desc_mem mem_i;   
+    desc_mem mem_i;
 
     function new (string name = "sg_mode_incr_seq");
         super.new(name);
@@ -1007,17 +1010,31 @@ class sg_mode_incr_seq extends base_master_sequence;
         super.body();
         reg_seq = reg_seq_item::type_id::create("reg_seq");
         mem_i = desc_mem::type_id::create("mem_i");
-        if(!reg_seq.randomize() with { 
+
+        assert(reg_seq.randomize() with { 
+            btt_s == MED;
             curdesc_pntr  == 32'd64;
-            taildesc_pntr == 32'd128;
-        }) begin
-            `uvm_error("BODY", "Randomization failed")
-        end
+            taildesc_pntr == 32'd64;
+            });
+
+        assert(mem_i.randomize() with {
+            mem_i.CD == 'd64;
+            //mem_i.ND == reg_seq.curdesc_pntr + 'h40;
+            mem_i.SA == 'h1000;
+            mem_i.SA_MSB == 0;
+            mem_i.DA == 'h2000;
+            mem_i.DA_MSB == 0;
+            mem_i.BTT == 'h100;
+            });
+        
         mem_i.load_desc(reg_seq.curdesc_pntr);
-        uvm_config_db #(desc_mem)::set(null,"*","descriptor_mem",mem_i);
+        uvm_config_db #(desc_mem)::set(uvm_root::get(),"*","descriptor_mem",mem_i);
+        mem_i.print();
+
         do begin
             reg_block.cdmasr.read(status, cdmasr_data);
         end while(cdmasr_data[1] == 0);
+
         reg_block.cdmacr.write(status, 32'h0);
         reg_block.cdmacr.write(status, 32'h00017008);
         reg_block.curdesc_pnt.write(status, reg_seq.curdesc_pntr);
@@ -1025,5 +1042,21 @@ class sg_mode_incr_seq extends base_master_sequence;
         reg_block.taildesc_pnt_msb.write(status, 0);
 
         `uvm_info("SG_MASTER", "Tail Pointer Written. SG Engine Starts Fetching...", UVM_LOW)
+
+        `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", $sformatf("cdma_introut: %0h", obj.mas_if[0].cdma_introut), UVM_MEDIUM)
+        wait(obj.mas_if[0].cdma_introut);
+        `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", $sformatf("cdma_introut: %0h", obj.mas_if[0].cdma_introut), UVM_MEDIUM)
+        do begin
+            reg_block.cdmasr.read(status,cdmasr_data);
+        end while(cdmasr_data[1]==0);
+        `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", $sformatf("Idle = %0h - wait cleared. Transfer completed!",cdmasr_data[1]), UVM_MEDIUM)
+        if(cdmasr_data[12] != 1) begin
+            `uvm_error("SIMPLE_MODE_DMA_INT_SEQ", "IOC_Irq NOT asserted")
+        end
+        else begin
+            `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", "IOC_Irq asserted!", UVM_MEDIUM)
+            `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", "Clearing IOC_Irq by doing W1C", UVM_MEDIUM)
+            reg_block.cdmasr.write(status,32'h1000);
+        end
     endtask
 endclass: sg_mode_incr_seq

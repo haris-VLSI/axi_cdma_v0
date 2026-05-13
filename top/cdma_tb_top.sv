@@ -131,8 +131,8 @@ module top;
     assign top.reset_n = reset_if.reset_n; // Drive the actual signal
 
     master_intf  m_axi_lite_if   (.aclk(m_clk), .areset_n(reset_n));    //Lite
-    slave_intf   s_axi_if        (.aclk(m_clk), .areset_n(reset_n));    //Data
-    slave_intf   s_axi_sg_if     (.aclk(m_clk), .areset_n(reset_n));    //SG Desc
+    slave_intf   s_axi_if        (.aclk(s_clk), .areset_n(reset_n));    //Data
+    slave_intf   s_axi_sg_if     (.aclk(s_clk), .areset_n(reset_n));    //SG Desc
 //   cdma_system_if sys_if();
 
     initial begin
@@ -161,7 +161,11 @@ module top;
     end
 
     initial begin
-        run_test ("sg_mode_incr_test");                   //21
+    /********************** SG-MODE ***********************/
+
+        run_test ("sg_mode_incr_test");                   //1
+    
+    /******************** SIMPLE-MODE *********************/
         //run_test ("simple_mode_wr_rd_hw_reset_test");     //20 
         //run_test ("simple_mode_64mb_btt_test");           //19 to run
         //run_test ("simple_mode_b2b_ioc_test");            //18 working
@@ -232,14 +236,12 @@ end
 //SG - AXI4
 //Write Address signals
     assign s_axi_sg_if.awid        =  0;
-    //assign s_axi_sg_if.awaddr[63:32]=  0;
     assign s_axi_sg_if.awlock      =  0;
     assign s_axi_sg_if.awqos       =  0;
     assign s_axi_sg_if.awregion    =  0;
     assign s_axi_sg_if.wdata[127:32]  =  'h0;
 //Read Address signals
     assign s_axi_sg_if.arid        =  0;
-    //assign s_axi_sg_if.araddr[63:32]=  0;
     assign s_axi_sg_if.arlock      =  0;
     assign s_axi_sg_if.arqos       =  0;
     assign s_axi_sg_if.arregion    =  0;

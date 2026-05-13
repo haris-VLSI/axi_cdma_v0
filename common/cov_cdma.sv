@@ -38,7 +38,11 @@ class cdma_cov extends uvm_subscriber #(master_seq_item);
             bins BTT            = {'h28}; 
         }
     // CDMACR
-        OP_MODE: coverpoint op_mode;
+        //OP_MODE: coverpoint op_mode;
+        OP_MODE: coverpoint op_mode{
+            bins Simple_DMA     = {0};
+            ignore_bins SG_DMA  = {1};
+            }
         RESET: coverpoint reset;
         //OP_MODE: coverpoint cov.wdata[0][3] iff(cov.operation == WRITE && cov.awaddr == 'h00){
         //    bins Simple_DMA     = {0};
@@ -127,6 +131,9 @@ class cdma_cov extends uvm_subscriber #(master_seq_item);
         SLV_MODE    : cross SLV_ERR, OP_MODE;
         DEC_MODE    : cross DEC_ERR, OP_MODE;
         INT_MODE    : cross INT_ERR, OP_MODE;
+        //INT_MODE : cross OP_MODE, INT_ERR {
+        //    bins simple_dma_errors = binsof(Simple_DMA) intersect {1};
+        //}
 
         SLV_RST     : cross SLV_ERR, RESET;
         DEC_RST     : cross DEC_ERR, RESET;

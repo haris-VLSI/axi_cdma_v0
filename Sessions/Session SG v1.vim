@@ -33,6 +33,7 @@ set smarttab
 set softtabstop=4
 set tabstop=4
 set termencoding=utf-8
+set wildignore=*.pyc
 set window=22
 let s:so_save = &so | let s:siso_save = &siso | set so=0 siso=0
 let v:this_session=expand("<sfile>:p")
@@ -51,11 +52,11 @@ badd +0 ../riviera/sim_txt.log
 badd +0 ../riviera/compile.log
 badd +11 ../riviera/simulate.do
 badd +4 axi_slave/slave_intf.sv
-badd +15 axi_lite/master_intf.sv
+badd +4 axi_lite/master_intf.sv
 badd +127 ../riviera/srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v
 badd +208 axi_slave/slave_sequence.sv
 badd +409 ../riviera/test_logs/simple_dma_int_error_test.log
-badd +35 top/package.sv
+badd +42 top/package.sv
 badd +4 axi_slave/slave_mem.sv
 badd +0 axi_slave/desc_mem.sv
 badd +55 ../riviera/compile.do
@@ -65,6 +66,11 @@ badd +39 top/cdma_env.sv
 badd +226 common/cdma_chk.sv
 badd +9 common/config_obj.sv
 badd +49 common/axi_base_sequence_item.sv
+badd +41 common/cov_cdma.sv
+badd +7 ../riviera/run_cov.py
+badd +0 axi_slave/slave_driver_1.sv
+badd +10 axi_slave/slave_driver.sv
+badd +44 top/ral_seq.sv
 argglobal
 silent! argdel *
 set stal=2
@@ -457,7 +463,7 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 21 - ((20 * winheight(0) + 10) / 21)
+let s:l = 21 - ((5 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
@@ -592,12 +598,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 998 - ((11 * winheight(0) + 11) / 22)
+let s:l = 1138 - ((11 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-998
-normal! 032|
+1138
+normal! 052|
 tabedit axi_slave/slave_sequence.sv
 set splitbelow splitright
 set nosplitbelow
@@ -723,12 +729,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 250 - ((10 * winheight(0) + 11) / 22)
+let s:l = 281 - ((15 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-250
-normal! 011|
+281
+normal! 0
 tabedit top/cdma_base_test.sv
 set splitbelow splitright
 set nosplitbelow
@@ -854,12 +860,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 650 - ((21 * winheight(0) + 11) / 22)
+let s:l = 530 - ((12 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-650
-normal! 09|
+530
+normal! 022|
 tabedit top/cdma_tb_top.sv
 set splitbelow splitright
 set nosplitbelow
@@ -985,12 +991,12 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 181 - ((21 * winheight(0) + 11) / 22)
+let s:l = 55 - ((9 * winheight(0) + 11) / 22)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-181
-normal! 04|
+55
+normal! 052|
 tabedit ../riviera/compile.log
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -1122,11 +1128,11 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 12 - ((0 * winheight(0) + 10) / 21)
+let s:l = 9 - ((1 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-12
+9
 normal! 0
 wincmd w
 argglobal
@@ -1249,11 +1255,11 @@ setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 2774 - ((12 * winheight(0) + 10) / 21)
+let s:l = 14769 - ((17 * winheight(0) + 10) / 21)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-2774
+14769
 normal! 012|
 wincmd w
 2wincmd w

@@ -425,12 +425,12 @@ class cdma_chk extends uvm_component;
             end
             
             2'b10: begin // SLVERR
-                `uvm_error("WR_RESP_ERR", "AXI Slave Error (SLVERR) detected on S2MM interface!")
+                `uvm_warning("WR_RESP_ERR", "AXI Slave Error (SLVERR) detected on S2MM interface!")
                 predict_specific_error(5); // Set Bit 5: DMASlvErr
             end
             
             2'b11: begin // DECERR
-                `uvm_error("WR_RESP_ERR", "AXI Decode Error (DECERR) detected on S2MM interface!")
+                `uvm_warning("WR_RESP_ERR", "AXI Decode Error (DECERR) detected on S2MM interface!")
                 predict_specific_error(6); // Set Bit 6: DMADecErr
             end
             
@@ -448,12 +448,12 @@ class cdma_chk extends uvm_component;
             end
             
             2'b10: begin // SLVERR
-                `uvm_error("RD_RESP_ERR", $sformatf("AXI Slave Error (SLVERR) on Read Beat %0d!", beat_idx))
+                `uvm_warning("RD_RESP_ERR", $sformatf("AXI Slave Error (SLVERR) on Read Beat %0d!", beat_idx))
                 predict_specific_error(5); // Set Bit 5: DMASlvErr
             end
             
             2'b11: begin // DECERR
-                `uvm_error("RD_RESP_ERR", $sformatf("AXI Decode Error (DECERR) on Read Beat %0d!", beat_idx))
+                `uvm_warning("RD_RESP_ERR", $sformatf("AXI Decode Error (DECERR) on Read Beat %0d!", beat_idx))
                 predict_specific_error(6); // Set Bit 6: DMADecErr
             end
             

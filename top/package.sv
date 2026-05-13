@@ -39,7 +39,7 @@ package axi_package;
  //`include "../common/cdma_4k_sbd.sv"
 // TOP
  `include "cdma_env.sv"
- `include "ral_seq.sv"
+ //`include "ral_seq.sv"
  `include "cdma_base_test.sv"
 
 endpackage

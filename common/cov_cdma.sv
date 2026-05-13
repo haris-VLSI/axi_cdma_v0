@@ -43,7 +43,11 @@ class cdma_cov extends uvm_subscriber #(master_seq_item);
             bins Simple_DMA     = {0};
             ignore_bins SG_DMA  = {1};
             }
-        RESET: coverpoint reset;
+        //RESET: coverpoint reset;
+        RESET: coverpoint reset{
+            bins Reset_High     = {1'b1};
+            ignore_bins Reset_Low      = {1'b0};
+        }
         //OP_MODE: coverpoint cov.wdata[0][3] iff(cov.operation == WRITE && cov.awaddr == 'h00){
         //    bins Simple_DMA     = {0};
         //    bins SG_DMA         = {1};
@@ -122,8 +126,14 @@ class cdma_cov extends uvm_subscriber #(master_seq_item);
 
     // Cross Coverage
         BURST_CROSS : cross READ_BURST, WRITE_BURST;
-        IDLE_ERR    : cross IDLE, ERR;
-        IOC_ERR     : cross IOC, ERR;        
+        //IDLE_ERR    : cross IDLE, ERR;
+        IDLE_ERR    : cross IDLE, ERR{
+            ignore_bins state = binsof(IDLE) intersect{0} && binsof(ERR) intersect{1};
+        }
+        //IOC_ERR     : cross IOC, ERR;
+        IOC_ERR     : cross IOC, ERR{
+            ignore_bins state = binsof(IOC) intersect{0} && binsof(ERR) intersect{1};
+        }
 
         IDLE_OP_MODE: cross IDLE, OP_MODE;
         IOC_OP_MODE : cross IOC, OP_MODE;

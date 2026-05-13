@@ -179,6 +179,7 @@ task slave_driver :: drive_read_data();
      `uvm_do_callbacks(slave_driver,slave_driver_callback,post_drive(pkt));
    end
 endtask
+
 /*class slave_driver_callback extends uvm_callback;
    `uvm_object_utils(slave_driver_callback)
 
@@ -360,3 +361,4 @@ task slave_driver :: drive_read_data();
      `uvm_do_callbacks(slave_driver,slave_driver_callback,post_drive(pkt));
    end
 endtask
+*/

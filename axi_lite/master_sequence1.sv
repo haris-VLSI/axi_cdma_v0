@@ -171,21 +171,31 @@ class simple_mode_interrupt_check extends base_master_sequence;
             `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", "Read Status Register Errs as 0. Clear is Success!", UVM_MEDIUM)
         end
         reg_block.cdmacr.Reset.write(status, 1'b1);
-        #10;
+        do begin
+            reg_block.cdmacr.read(status,cdmacr_data);
+        end while(cdmacr_data[2]==1);
+        //#10;
     endtask
 endclass: simple_mode_interrupt_check
 
 
-class simple_mode_fixed_seq extends base_master_sequence;
-    `uvm_object_utils(simple_mode_fixed_seq)
+class simple_mode_rd_fixed_seq extends base_master_sequence;
+    `uvm_object_utils(simple_mode_rd_fixed_seq)
 
-    function new(string name = "simple_mode_fixed_seq");
+    function new(string name = "simple_mode_rd_fixed_seq");
         super.new(name); 
     endfunction
+
+    uvm_reg_data_t keyhole;
 
     task body();
         super.body();
 
+        keyhole[16] = 1;
+        keyhole[14] = 1;
+        keyhole[12] = 1;
+        keyhole[4] = 1; // RD
+        keyhole[5] = 0; // WR
         if(!regi.randomize() with {
             regi.btt_s       == MIN;
             regi.sa_addr     == 'hfcc;
@@ -200,7 +210,7 @@ class simple_mode_fixed_seq extends base_master_sequence;
         end while(cdmasr_data[1]==0);
         `uvm_info("SIMPLE_MODE_FIXED_SEQ", $sformatf("Idle = %0h - wait cleared",cdmasr_data[1]), UVM_MEDIUM)
         `uvm_info("SIMPLE_MODE_FIXED_SEQ", "Configuring CDMACR in Key Hole Mode", UVM_MEDIUM)
-        reg_block.cdmacr.write(status,32'h15010);
+        reg_block.cdmacr.write(status,keyhole);
         reg_block.cdmacr.read(status,cdmacr_data);
         `uvm_info("SIMPLE_MODE_FIXED_SEQ", $sformatf("CDMACR Key Hole Mode: Write: %0h | Read: %0h",cdmacr_data[5],cdmacr_data[4]), UVM_MEDIUM)
         `uvm_info("SIMPLE_MODE_FIXED_SEQ", "Configuring Registers SA, DA, BTT", UVM_MEDIUM)
@@ -211,10 +221,106 @@ class simple_mode_fixed_seq extends base_master_sequence;
         reg_block.sa.read(status,temp_data);
         reg_block.da.read(status,temp_data);
         reg_block.btt.read(status,temp_data);
-        //wait(obj.mas_if[0].cdma_introut);
-        //reg_block.cdmacr.write(status, 32'h10004);
+        wait(obj.mas_if[0].cdma_introut);
+        reg_block.cdmacr.write(status, 32'h10004);
     endtask
-endclass:simple_mode_fixed_seq
+endclass:simple_mode_rd_fixed_seq
+
+
+class simple_mode_wr_fixed_seq extends base_master_sequence;
+    `uvm_object_utils(simple_mode_wr_fixed_seq)
+
+    function new(string name = "simple_mode_wr_fixed_seq");
+        super.new(name); 
+    endfunction
+
+    uvm_reg_data_t keyhole;
+
+    task body();
+        super.body();
+
+        keyhole[16] = 1;
+        keyhole[14] = 1;
+        keyhole[12] = 1;
+        keyhole[4] = 0; // RD
+        keyhole[5] = 1; // WR
+        if(!regi.randomize() with {
+            regi.btt_s       == MIN;
+            regi.sa_addr     == 'hfcc;
+            regi.btt_bytes   == 'h100;
+            })begin
+            `uvm_error (get_full_name(), "randomization_failed")
+        end
+
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", "Starting Simple Mode Fixed Transfer Sequence", UVM_MEDIUM)
+        do begin
+            reg_block.cdmasr.read(status,cdmasr_data);
+        end while(cdmasr_data[1]==0);
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", $sformatf("Idle = %0h - wait cleared",cdmasr_data[1]), UVM_MEDIUM)
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", "Configuring CDMACR in Key Hole Mode", UVM_MEDIUM)
+        reg_block.cdmacr.write(status,keyhole);
+        reg_block.cdmacr.read(status,cdmacr_data);
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", $sformatf("CDMACR Key Hole Mode: Write: %0h | Read: %0h",cdmacr_data[5],cdmacr_data[4]), UVM_MEDIUM)
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", "Configuring Registers SA, DA, BTT", UVM_MEDIUM)
+        reg_block.sa.write(status,regi.sa_addr);
+        reg_block.da.write(status,regi.da_addr);
+        reg_block.btt.write(status,regi.btt_bytes);
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", $sformatf("Configured BTT: %0d - Transfer started!",regi.btt_bytes), UVM_MEDIUM)
+        reg_block.sa.read(status,temp_data);
+        reg_block.da.read(status,temp_data);
+        reg_block.btt.read(status,temp_data);
+        wait(obj.mas_if[0].cdma_introut);
+        reg_block.cdmacr.write(status, 32'h10004);
+    endtask
+endclass:simple_mode_wr_fixed_seq
+
+
+class simple_mode_rd_wr_fixed_seq extends base_master_sequence;
+    `uvm_object_utils(simple_mode_rd_wr_fixed_seq)
+
+    function new(string name = "simple_mode_rd_wr_fixed_seq");
+        super.new(name); 
+    endfunction
+
+    uvm_reg_data_t keyhole;
+
+    task body();
+        super.body();
+
+        keyhole[16] = 1;
+        keyhole[14] = 1;
+        keyhole[12] = 1;
+        keyhole[4] = 1; // RD
+        keyhole[5] = 1; // WR
+        if(!regi.randomize() with {
+            regi.btt_s       == MIN;
+            regi.sa_addr     == 'hfcc;
+            regi.btt_bytes   == 'h100;
+            })begin
+            `uvm_error (get_full_name(), "randomization_failed")
+        end
+
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", "Starting Simple Mode Fixed Transfer Sequence", UVM_MEDIUM)
+        do begin
+            reg_block.cdmasr.read(status,cdmasr_data);
+        end while(cdmasr_data[1]==0);
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", $sformatf("Idle = %0h - wait cleared",cdmasr_data[1]), UVM_MEDIUM)
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", "Configuring CDMACR in Key Hole Mode", UVM_MEDIUM)
+        reg_block.cdmacr.write(status,keyhole);
+        reg_block.cdmacr.read(status,cdmacr_data);
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", $sformatf("CDMACR Key Hole Mode: Write: %0h | Read: %0h",cdmacr_data[5],cdmacr_data[4]), UVM_MEDIUM)
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", "Configuring Registers SA, DA, BTT", UVM_MEDIUM)
+        reg_block.sa.write(status,regi.sa_addr);
+        reg_block.da.write(status,regi.da_addr);
+        reg_block.btt.write(status,regi.btt_bytes);
+        `uvm_info("SIMPLE_MODE_FIXED_SEQ", $sformatf("Configured BTT: %0d - Transfer started!",regi.btt_bytes), UVM_MEDIUM)
+        reg_block.sa.read(status,temp_data);
+        reg_block.da.read(status,temp_data);
+        reg_block.btt.read(status,temp_data);
+        wait(obj.mas_if[0].cdma_introut);
+        reg_block.cdmacr.write(status, 32'h10004);
+    endtask
+endclass:simple_mode_rd_wr_fixed_seq
 
 
 class simple_dma_slave_error_seq extends base_master_sequence;
@@ -322,7 +428,10 @@ class simple_dma_decode_error_seq extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_DECERR_SEQ", "DMADecErr asserted",UVM_LOW)
         end
-//        reg_block.cdmacr.write(status, 32'h10004);
+        reg_block.cdmacr.write(status, 32'h10004);
+        do begin
+            reg_block.cdmacr.read(status,cdmacr_data);
+        end while(cdmacr_data[2]==1);
     endtask
 endclass:simple_dma_decode_error_seq
 
@@ -382,7 +491,10 @@ class simple_dma_int_error_seq extends base_master_sequence;
         else begin
             `uvm_info("SIMPLE_MODE_DMA_INT_SEQ", "DMAIntErr asserted",UVM_LOW)
         end
-//        reg_block.cdmacr.write(status, 32'h10004);
+        reg_block.cdmacr.write(status, 32'h10004);
+        do begin
+            reg_block.cdmacr.read(status,cdmacr_data);
+        end while(cdmacr_data[2]==1);
     endtask
 endclass:simple_dma_int_error_seq
 
@@ -534,6 +646,10 @@ class simple_mode_b2b_ioc_seq extends base_master_sequence;
                 end
             end
             reg_block.cdmacr.write(status, 32'h10004);
+            do begin
+                reg_block.cdmacr.read(status,cdmacr_data);
+            end while(cdmacr_data[2]==1);
+            //#100;
         end
     endtask
 endclass: simple_mode_b2b_ioc_seq
@@ -1018,7 +1134,7 @@ class sg_mode_incr_seq extends base_master_sequence;
             });
 
         assert(mem_i.randomize() with {
-            mem_i.CD == 'd64;
+            mem_i.CD == reg_seq.curdesc_pntr;
             //mem_i.ND == reg_seq.curdesc_pntr + 'h40;
             mem_i.SA == 'h1000;
             mem_i.SA_MSB == 0;
@@ -1026,8 +1142,9 @@ class sg_mode_incr_seq extends base_master_sequence;
             mem_i.DA_MSB == 0;
             mem_i.BTT == 'h100;
             });
-        
+
         mem_i.load_desc(reg_seq.curdesc_pntr);
+
         uvm_config_db #(desc_mem)::set(uvm_root::get(),"*","descriptor_mem",mem_i);
         mem_i.print();
 

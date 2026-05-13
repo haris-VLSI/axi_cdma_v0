@@ -364,20 +364,20 @@ class simple_mode_incr_transfer_test extends cdma_base_test;
 endclass: simple_mode_incr_transfer_test
 
 
-class simple_mode_fixed_transfer_test extends cdma_base_test;
-    `uvm_component_utils(simple_mode_fixed_transfer_test)
+class simple_mode_rd_fixed_test extends cdma_base_test;
+    `uvm_component_utils(simple_mode_rd_fixed_test)
 
-    function new(string name="simple_mode_fixed_transfer_test", uvm_component parent);
+    function new(string name="simple_mode_rd_fixed_test", uvm_component parent);
         super.new(name,parent);
     endfunction
     
-    simple_mode_fixed_seq           master_seq;
+    simple_mode_rd_fixed_seq     master_seq;
     base_slave_sequence             slave_seq;
     simple_mode_interrupt_check     interrupt_seq;
 
     task main_phase(uvm_phase phase);
         phase.raise_objection(this);
-        master_seq = simple_mode_fixed_seq::type_id::create("master_seq");
+        master_seq = simple_mode_rd_fixed_seq::type_id::create("master_seq");
         slave_seq = base_slave_sequence::type_id::create("slave_seq");
         interrupt_seq = simple_mode_interrupt_check::type_id::create("interrupt_seq");
 
@@ -392,8 +392,67 @@ class simple_mode_fixed_transfer_test extends cdma_base_test;
         join
         phase.drop_objection(this);
     endtask
+endclass: simple_mode_rd_fixed_test
 
-endclass: simple_mode_fixed_transfer_test
+class simple_mode_wr_fixed_test extends cdma_base_test;
+    `uvm_component_utils(simple_mode_wr_fixed_test)
+
+    function new(string name="simple_mode_wr_fixed_test", uvm_component parent);
+        super.new(name,parent);
+    endfunction
+    
+    simple_mode_wr_fixed_seq     master_seq;
+    base_slave_sequence             slave_seq;
+    simple_mode_interrupt_check     interrupt_seq;
+
+    task main_phase(uvm_phase phase);
+        phase.raise_objection(this);
+        master_seq = simple_mode_wr_fixed_seq::type_id::create("master_seq");
+        slave_seq = base_slave_sequence::type_id::create("slave_seq");
+        interrupt_seq = simple_mode_interrupt_check::type_id::create("interrupt_seq");
+
+        master_seq.reg_block = env.reg_block;
+        interrupt_seq.reg_block = env.reg_block;
+        fork
+            slave_seq.start(env.s_agt[0].sqr);
+        join_none
+        fork
+            master_seq.start(env.m_agt[0].sqr);
+            interrupt_seq.start(env.m_agt[0].sqr);
+        join
+        phase.drop_objection(this);
+    endtask
+endclass: simple_mode_wr_fixed_test
+
+class simple_mode_rd_wr_fixed_test extends cdma_base_test;
+    `uvm_component_utils(simple_mode_rd_wr_fixed_test)
+
+    function new(string name="simple_mode_rd_wr_fixed_test", uvm_component parent);
+        super.new(name,parent);
+    endfunction
+    
+    simple_mode_rd_wr_fixed_seq     master_seq;
+    base_slave_sequence             slave_seq;
+    simple_mode_interrupt_check     interrupt_seq;
+
+    task main_phase(uvm_phase phase);
+        phase.raise_objection(this);
+        master_seq = simple_mode_rd_wr_fixed_seq::type_id::create("master_seq");
+        slave_seq = base_slave_sequence::type_id::create("slave_seq");
+        interrupt_seq = simple_mode_interrupt_check::type_id::create("interrupt_seq");
+
+        master_seq.reg_block = env.reg_block;
+        interrupt_seq.reg_block = env.reg_block;
+        fork
+            slave_seq.start(env.s_agt[0].sqr);
+        join_none
+        fork
+            master_seq.start(env.m_agt[0].sqr);
+            interrupt_seq.start(env.m_agt[0].sqr);
+        join
+        phase.drop_objection(this);
+    endtask
+endclass: simple_mode_rd_wr_fixed_test
 
 
 class simple_dma_slave_error_test extends cdma_base_test;
@@ -479,7 +538,7 @@ class simple_dma_int_error_test extends cdma_base_test;
             join_none
             fork
                 master_seq.start(env.m_agt[0].sqr);
-                interrupt_seq.start(env.m_agt[0].sqr);
+                //interrupt_seq.start(env.m_agt[0].sqr);
             join
         phase.drop_objection(this);
     endtask

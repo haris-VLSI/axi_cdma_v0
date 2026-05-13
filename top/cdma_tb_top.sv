@@ -44,15 +44,15 @@ module top;
                            .M_AXI_0_bready(s_axi_if.bready),
                            .M_AXI_0_bresp(s_axi_if.bresp[1:0]),
                            .M_AXI_0_bvalid(s_axi_if.bvalid),
-                           .M_AXI_0_rdata(s_axi_if.rdata[127:0]),
+                           .M_AXI_0_rdata(s_axi_if.rdata),
                            .M_AXI_0_rlast(s_axi_if.rlast),
                            .M_AXI_0_rready(s_axi_if.rready),
                            .M_AXI_0_rresp(s_axi_if.rresp[1:0]),
                            .M_AXI_0_rvalid(s_axi_if.rvalid),
-                           .M_AXI_0_wdata(s_axi_if.wdata[127:0]),
+                           .M_AXI_0_wdata(s_axi_if.wdata),
                            .M_AXI_0_wlast(s_axi_if.wlast),
                            .M_AXI_0_wready(s_axi_if.wready),
-                           .M_AXI_0_wstrb(s_axi_if.wstrobe[15:0]),
+                           .M_AXI_0_wstrb(s_axi_if.wstrobe),
                            .M_AXI_0_wvalid(s_axi_if.wvalid),
                             //SG Descriptor Signals
                                .M_AXI_SG_0_araddr(s_axi_sg_if.araddr),
@@ -163,21 +163,23 @@ module top;
     initial begin
     /********************** SG-MODE ***********************/
 
-        run_test ("sg_mode_incr_test");                   //1
+        //run_test ("sg_mode_incr_test");                   //1
     
     /******************** SIMPLE-MODE *********************/
         //run_test ("simple_mode_wr_rd_hw_reset_test");     //20 
         //run_test ("simple_mode_64mb_btt_test");           //19 to run
-        //run_test ("simple_mode_b2b_ioc_test");            //18 working
+        run_test ("simple_mode_b2b_ioc_test");            //18 working
         //run_test ("simple_mode_b2b_test");                //17 working
         //run_test ("simple_mode_4k_check_test");           //16 working
         //run_test ("simple_mode_btt_check_test");          //15 working
         //run_test ("simple_mode_alignment_test");          //14 working
-        //run_test ("simple_mode_4k_boundary_test");         //13 working
+        //run_test ("simple_mode_4k_boundary_test");        //13 working
         //run_test ("simple_dma_int_error_test");           //12 working
         //run_test ("simple_dma_decode_error_test");        //11 working
         //run_test ("simple_dma_slave_error_test");         //10 working
-        //run_test ("simple_mode_fixed_transfer_test");     //9 working
+        //run_test ("simple_mode_rd_fixed_test");           //9 working
+        //run_test ("simple_mode_wr_fixed_test");           //9 working
+        //run_test ("simple_mode_rd_wr_fixed_test");        //9 working
         //run_test ("simple_mode_incr_transfer_test");      //8 working
         //run_test ("simple_mode_wr_rd_test");              //7 working
         //run_test ("ral_access_test");                     //6 working
@@ -226,7 +228,7 @@ always@(posedge aclk)begin
      m_axi_lite_if.arburst   <=  0;
      m_axi_lite_if.arsize    <=  0;
      m_axi_lite_if.mas_drv_cb.arlock    <=  0;
-     m_axi_lite_if.mas_drv_cb.rdata[127:32] <=   'h0;
+     //m_axi_lite_if.mas_drv_cb.rdata[127:32] <=   'h0;
 end
     assign m_axi_lite_if.bid       =  0;
     assign m_axi_lite_if.rid       =  0;
@@ -239,7 +241,7 @@ end
     assign s_axi_sg_if.awlock      =  0;
     assign s_axi_sg_if.awqos       =  0;
     assign s_axi_sg_if.awregion    =  0;
-    assign s_axi_sg_if.wdata[127:32]  =  'h0;
+    //assign s_axi_sg_if.wdata[127:32]  =  'h0;
 //Read Address signals
     assign s_axi_sg_if.arid        =  0;
     assign s_axi_sg_if.arlock      =  0;
@@ -291,7 +293,7 @@ end
     initial begin
         s_axi_if.bid            =  'h0;
         s_axi_if.rid            =  'h0;
-        s_axi_sg_if.rdata[127:32]   =   'h0;
+        //s_axi_sg_if.rdata[127:32]   =   'h0;
         s_axi_sg_if.bid         =  'h0;
         s_axi_sg_if.rid         =  'h0;
     end
